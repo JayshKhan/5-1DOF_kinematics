@@ -1,5 +1,16 @@
-#include <Servo.h>
+//
+// Created by j-ubuntuworkstation on 4/19/24.
+//
 
+#include <iostream>
+#def
+
+using namespace std;
+
+int main()
+{
+
+}
 #define SERVO_COUNT 6;
 #define DELAY 500;
 #define SERVO_MIN_PWM 500;
@@ -22,7 +33,32 @@ void loop()
     int angles[6] = {0, 0, 0, 0, 0, 0};
     moveTo(servos, angles);
     delay(DELAY);
-
+    angles[0] = 90;
+    moveTo(servos, angles);
+    delay(DELAY);
+    angles[0] = 0;
+    angles[1] = 90;
+    moveTo(servos, angles);
+    delay(DELAY);
+    angles[1] = 0;
+    angles[2] = 90;
+    moveTo(servos, angles);
+    delay(DELAY);
+    angles[2] = 0;
+    angles[3] = 90;
+    moveTo(servos, angles);
+    delay(DELAY);
+    angles[3] = 0;
+    angles[4] = 90;
+    moveTo(servos, angles);
+    delay(DELAY);
+    angles[4] = 0;
+    angles[5] = 90;
+    moveTo(servos, angles);
+    delay(DELAY);
+    angles[5] = 0;
+    moveTo(servos, angles);
+    delay(DELAY);
 }
 
 boolean moveTo(int[] servos, int[] angles)
