@@ -19,40 +19,7 @@ void setup() {
 }
 
 void loop() {
-// testing the forward kinematics
-  float alpha[SERVO_COUNT-1] = {0, 90, 0, 0, 90};
-  int theta[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
-  float a[SERVO_COUNT-1] = {0, 0, 3, 4, 3};
-  float d[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
-  Matrix4x4 * T = T_matrices(alpha, theta, a, d);
-  Matrix4x4 T_0_5 = forwardKinematics(T);
-  float x, y, z;
-  T_0_5.getXYZ(&x, &y, &z);
-  Serial.println("0X: " + String(x) + " Y: " + String(y) + " Z: " + String(z));
-//------------------------------------------
-  // for Fixing the servo at 0, 90, 180
-  buttonState0 = !digitalRead(buttonPin0);
-  buttonState90 = !digitalRead(buttonPin90);
-  buttonState180 = !digitalRead(buttonPin180);
-  Serial.println(buttonState0 == HIGH);
-  if (buttonState0 == HIGH) {
-    Serial.println("setting angle 0");
-    angles[0] = 0;
-  }
-
-  if (buttonState90 == HIGH) {
-    Serial.println("setting angle 90");
-    angles[0] = 90;
-  }
-
-  if (buttonState180 == HIGH) {
-    Serial.println("setting angle 180");
-    angles[0] = 180;
-  }
-
-  moveTo(angles);
-  delay(DELAY);
-
+testing(true);
 }
 
 /**
@@ -104,4 +71,54 @@ void reset() {
     angles[i] = initialAngles[i];
   }
   moveTo(angles);
+}
+
+
+
+
+
+/**
+ * Testing function
+*/
+void test(bool oneIteration=false)
+{
+// testing the forward kinematics
+  float alpha[SERVO_COUNT-1] = {0, 90, 0, 0, 90};
+  int theta[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
+  float a[SERVO_COUNT-1] = {0, 0, 3, 4, 3};
+  float d[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
+  Matrix4x4 * T = T_matrices(alpha, theta, a, d);
+  Matrix4x4 T_0_5 = forwardKinematics(T);
+  float x, y, z;
+  T_0_5.getXYZ(&x, &y, &z);
+  Serial.println("0X: " + String(x) + " Y: " + String(y) + " Z: " + String(z));
+//------------------------------------------
+  // for Fixing the servo at 0, 90, 180
+  buttonState0 = !digitalRead(buttonPin0);
+  buttonState90 = !digitalRead(buttonPin90);
+  buttonState180 = !digitalRead(buttonPin180);
+  Serial.println(buttonState0 == HIGH);
+  if (buttonState0 == HIGH) {
+    Serial.println("setting angle 0");
+    angles[0] = 0;
+  }
+
+  if (buttonState90 == HIGH) {
+    Serial.println("setting angle 90");
+    angles[0] = 90;
+  }
+
+  if (buttonState180 == HIGH) {
+    Serial.println("setting angle 180");
+    angles[0] = 180;
+  }
+
+  moveTo(angles);
+  delay(DELAY);
+
+
+   if(oneIteration)
+  {
+	for(;;);
+  }
 }
