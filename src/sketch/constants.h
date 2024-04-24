@@ -5,14 +5,20 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 #include <Servo.h>
+#include<Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 
 #include <math.h>
 
-#define SERVO_COUNT 6 // number of servos
-#define DELAY 500 // delay between each movement
-#define SERVO_MIN_PWM 500 // minimum pulse width
-#define SERVO_MAX_PWM 2500 // maximum pulse width
-#define SPEED 5 // speed of servo movement
+#define SERVO_COUNT 4 // number of servos
+#define DELAY 50 // delay between each movement
+#define SERVO_MIN_PWM 125 // minimum pulse width
+#define SERVO_MAX_PWM 575 // maximum pulse width
+#define SPEED 10 // speed of servo movement
+#define SERVO_FREQ 60
+
+#define USMIN  600 // This is the rounded 'minimum' microsecond length based on the minimum pulse of 150
+#define USMAX  2400 // This is the rounded 'maximum' microsecond length based on the maximum pulse of 600
 
 // for Fixing the servo at 0, 90, 180
 int buttonPin0 = 9;
@@ -23,9 +29,10 @@ int buttonState90 = LOW;
 int buttonState180 = LOW;
 //----------------------------
 
-Servo servos[SERVO_COUNT];
+Adafruit_PWMServoDriver servos[SERVO_COUNT]={Adafruit_PWMServoDriver()};
+Adafruit_PWMServoDriver m1= Adafruit_PWMServoDriver();
 int servo_pin[SERVO_COUNT] = {
-    3,4,5,6,7,8
+    1,2,3,4
   }; //{3,4,5,6,7,8};
 int initialAngles[SERVO_COUNT] = {
     0

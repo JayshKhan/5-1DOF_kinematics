@@ -10,7 +10,11 @@ void test(bool);
 void setup() {
   Serial.begin(9600); //initialize serial communication
   for (int i = 0; i < SERVO_COUNT; i++) {
-    servos[i].attach(servo_pin[i], SERVO_MIN_PWM, SERVO_MAX_PWM);
+    servos[i].begin();
+    servos[i].setOscillatorFrequency(27000000);
+    servos[i].setPWMFreq(SERVO_FREQ);
+
+    // servos[i].attach(servo_pin[i], SERVO_MIN_PWM, SERVO_MAX_PWM);
   }
   // for Fixing the servo at 0, 90, 180
   pinMode(buttonPin0, INPUT_PULLUP);
@@ -19,8 +23,8 @@ void setup() {
 }
 
 void loop() {
-int angle[1]={0};
-moveServosSequentially(angle);
+// int angle[1]={0};
+moveServosSequentially();
 //  float alpha[SERVO_COUNT-1] = {0, 90, 0, 0, 90};
 //   int theta[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
 //   float a[SERVO_COUNT-1] = {0, 0, 3, 4, 3};
@@ -32,27 +36,27 @@ moveServosSequentially(angle);
 //   Serial.println("0X: " + String(x) + " Y: " + String(y) + " Z: " + String(z));
 // //------------------------------------------
 //   // for Fixing the servo at 0, 90, 180
-//   buttonState0 = !digitalRead(buttonPin0);
-//   buttonState90 = !digitalRead(buttonPin90);
-//   buttonState180 = !digitalRead(buttonPin180);
-//   Serial.println(buttonState0 == HIGH);
-//   if (buttonState0 == HIGH) {
-//     Serial.println("setting angle 0");
-//     angles[0] = 0;
-//   }
-//
-//   if (buttonState90 == HIGH) {
-//     Serial.println("setting angle 90");
-//     angles[0] = 90;
-//   }
-//
-//   if (buttonState180 == HIGH) {
-//     Serial.println("setting angle 180");
-//     angles[0] = 180;
-//   }
-//
-//   moveServosSequentially(angles);
-//   delay(DELAY);
+  buttonState0 = !digitalRead(buttonPin0);
+  buttonState90 = !digitalRead(buttonPin90);
+  buttonState180 = !digitalRead(buttonPin180);
+  Serial.println(buttonState0 == HIGH);
+  if (buttonState0 == HIGH) {
+    Serial.println("setting angle 0");
+    angles[0] = 0;
+  }
+
+  if (buttonState90 == HIGH) {
+    Serial.println("setting angle 90");
+    angles[0] = 90;
+  }
+
+  if (buttonState180 == HIGH) {
+    Serial.println("setting angle 180");
+    angles[0] = 180;
+  }
+
+  moveServosSequentially();
+  // delay(DELAY);
 
 
 }
@@ -63,7 +67,7 @@ moveServosSequentially(angle);
  * @author Jaysh Khan
  */
 
-void moveServosSequentially(int angles[]) {
+void moveServosSequentially() {
   for (int i = 0; i < SERVO_COUNT; i++) {
     // If angle is -1 then the servo should not move
     if (angles[i] == -1 || angles[i] == currentAngles[i]) {
@@ -72,14 +76,21 @@ void moveServosSequentially(int angles[]) {
     int direction = angles[i] > currentAngles[i] ? 1 : -1;
     for (int j = currentAngles[i]; j != angles[i]; j += direction * SPEED) {
         if (direction==-1 && j - SPEED > angles[i]) {
-		  servos[i].write(j);
+		  // servos[i].write(j);
+      servos[i].setPWM(servo_pin[i],0,angleToPulse(j));
+      // servos[i].writeMicroseconds(servo_pin[i],angleToMS(j));
+  
 		} else if (direction==1 && j + SPEED < angles[i]) {
-		  servos[i].write(j);
+		  // servos[i].write(j);
+      servos[i].setPWM(servo_pin[i],0,angleToPulse(j));
+      // servos[i].writeMicroseconds(servo_pin[i],angleToMS(j));
 		} else {
-		  servos[i].write(angles[i]);
+		  // servos[i].write(angles[i]);
+      servos[i].setPWM(servo_pin[i],0,angleToPulse(angles[i]));
+      // servos[i].writeMicroseconds(servo_pin[i],angleToMS(angles[i]));
 		  break;
 		}
-	  delay(DELAY);
+	  // delay(DELAY);
 	}
 //     if (currentAngles[i] < angles[i]) {
 //       // smoothly moving to that angle
@@ -116,34 +127,34 @@ void moveServosSequentially(int angles[]) {
  * work in progress...
  */
 
-void moveServosSimultaneously(int angles[]) {
-  // Flag to track if any servo needs movement
-  bool needsUpdate = false;
+// void moveServosSimultaneously(int angles[]) {
+//   // Flag to track if any servo needs movement
+//   bool needsUpdate = false;
 
-  // Loop through each servo
-  for (int i = 0; i < SERVO_COUNT; i++) {
-    // Check if angle needs update (not -1 or different from current)
-    if (angles[i] != -1 && angles[i] != currentAngles[i]) {
-      needsUpdate = true;
-    }
-  }
+//   // Loop through each servo
+//   for (int i = 0; i < SERVO_COUNT; i++) {
+//     // Check if angle needs update (not -1 or different from current)
+//     if (angles[i] != -1 && angles[i] != currentAngles[i]) {
+//       needsUpdate = true;
+//     }
+//   }
 
-  // If any servo needs update, move them simultaneously with step-by-step approach
-  if (needsUpdate) {
-    for (int i = 0; i < SERVO_COUNT; i++) {
-      int direction = (angles[i] > currentAngles[i]) ? 1 : -1;
-      // Move towards target angle with SPEED steps
-      if (currentAngles[i] + direction * SPEED < angles[i]) {
-        currentAngles[i] += direction * SPEED;
-      } else {
-        currentAngles[i] = angles[i];
-      }
-      servos[i].write(currentAngles[i]);
-    }
-  }
+//   // If any servo needs update, move them simultaneously with step-by-step approach
+//   if (needsUpdate) {
+//     for (int i = 0; i < SERVO_COUNT; i++) {
+//       int direction = (angles[i] > currentAngles[i]) ? 1 : -1;
+//       // Move towards target angle with SPEED steps
+//       if (currentAngles[i] + direction * SPEED < angles[i]) {
+//         currentAngles[i] += direction * SPEED;
+//       } else {
+//         currentAngles[i] = angles[i];
+//       }
+//       servos[i].write(currentAngles[i]);
+//     }
+//   }
 
-  delay(DELAY); // Add a delay after updates
-}
+//   delay(DELAY); // Add a delay after updates
+// }
 
 /**
  * Reset the servo to initial position
@@ -153,7 +164,7 @@ void reset() {
   for (int i = 0; i < SERVO_COUNT; i++) {
     angles[i] = initialAngles[i];
   }
-  moveServosSequentially(angles);
+  moveServosSequentially();
 }
 
 
@@ -171,4 +182,17 @@ void test(bool oneIteration=false)
   {
   for(;;);
   }
+}
+
+int angleToPulse(int ang){
+   int pulse = map(ang,0, 180, SERVO_MIN_PWM,SERVO_MAX_PWM);// map angle of 0 to 180 to Servo min and Servo max 
+   Serial.print("Angle: ");Serial.print(ang);
+   Serial.print(" pulse: ");Serial.println(pulse);
+   return pulse;
+}
+int angleToMS(int ang){
+   int ms = map(ang,0, 180, USMIN,USMAX);// map angle of 0 to 180 to Servo min and Servo max 
+   Serial.print("Angle: ");Serial.print(ang);
+   Serial.print(" MS: ");Serial.println(ms);
+   return ms;
 }
