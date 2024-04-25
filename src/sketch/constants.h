@@ -6,43 +6,53 @@
 #define CONSTANTS_H
 #include <Servo.h>
 #include<Wire.h>
+#include<PID_v1.h>
 #include <Adafruit_PWMServoDriver.h>
 
 #include <math.h>
-
-#define SERVO_COUNT 4 // number of servos
+const bool PWMDriver= false; // 0 if Servo.h
+#define SERVO_COUNT 1 // number of servos
 #define DELAY 50 // delay between each movement
-#define SERVO_MIN_PWM 125 // minimum pulse width
-#define SERVO_MAX_PWM 575 // maximum pulse width
+#define SERVO_MIN_PWM 500 // minimum pulse width
+#define SERVO_MAX_PWM 2500 // maximum pulse width
 #define SPEED 10 // speed of servo movement
 #define SERVO_FREQ 60
 
 #define USMIN  600 // This is the rounded 'minimum' microsecond length based on the minimum pulse of 150
 #define USMAX  2400 // This is the rounded 'maximum' microsecond length based on the maximum pulse of 600
 
-// for Fixing the servo at 0, 90, 180
-int buttonPin0 = 9;
-int buttonPin90 = 10;
-int buttonPin180 = 11;
-int buttonState0 = LOW;
-int buttonState90 = LOW;
-int buttonState180 = LOW;
-//----------------------------
 
-Adafruit_PWMServoDriver servos[SERVO_COUNT]={Adafruit_PWMServoDriver()};
-Adafruit_PWMServoDriver m1= Adafruit_PWMServoDriver();
+  Adafruit_PWMServoDriver servosP[SERVO_COUNT]={Adafruit_PWMServoDriver()};
+
+
+    Servo servos[SERVO_COUNT];
+
+
+
 int servo_pin[SERVO_COUNT] = {
-    1,2,3,4
+    9
   }; //{3,4,5,6,7,8};
-int initialAngles[SERVO_COUNT] = {
-    0
+double initialAngles[SERVO_COUNT] = {
+    0.0
   }; //initializing all with Zero
-int currentAngles[SERVO_COUNT] = {
-    0
+double currentAngles[SERVO_COUNT] = {
+    0.0
   }; //initializing all with Zero
-int angles[SERVO_COUNT] = {
-    0
+double angles[SERVO_COUNT] = {
+    0.0
   }; //initializing all with Zero
+
+double inputs[SERVO_COUNT], outputs[SERVO_COUNT];
+double Kp = 1.0, Ki = 0.1, Kd = 0.0;  // Adjust PID constants
+
+// Create PID controller objects for each servo
+PID* pids[SERVO_COUNT];
+
+
+/**
+* Kinematics Stuff
+*/
+
 
 struct Matrix4x4 {
     String name = "temp"; // T_0_1 , T_1_2, T_2_3, T_3_4, T_4_5, T_5_6

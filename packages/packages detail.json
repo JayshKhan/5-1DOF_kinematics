@@ -5,5 +5,10 @@
   "Hardware": {
     "board": "Arduino uno/nano",
     "sketch": "sketch/main.ino"
+  },
+  "libraries": {
+    "Servo": "1.2.1",
+    "Adafruit_PWMServoDriver": "3.0.2",
+    "PID": "1.2.0"
   }
 }
