@@ -11,11 +11,11 @@
 
 #include <math.h>
 const bool PWMDriver= false; // 0 if Servo.h
-#define SERVO_COUNT 1 // number of servos
-#define DELAY 50 // delay between each movement
+#define SERVO_COUNT 5 // number of servos
+#define DELAY 500 // delay between each movement
 #define SERVO_MIN_PWM 500 // minimum pulse width
 #define SERVO_MAX_PWM 2500 // maximum pulse width
-#define SPEED 10 // speed of servo movement
+#define SPEED 3 // speed of servo movement
 #define SERVO_FREQ 60
 
 #define USMIN  600 // This is the rounded 'minimum' microsecond length based on the minimum pulse of 150
@@ -30,16 +30,16 @@ const bool PWMDriver= false; // 0 if Servo.h
 
 
 int servo_pin[SERVO_COUNT] = {
-    9
+    3,5,6,9,10
   }; //{3,4,5,6,7,8};
 double initialAngles[SERVO_COUNT] = {
-    0.0
+    180.0,0.0,0.0,0.0,180.0
   }; //initializing all with Zero
 double currentAngles[SERVO_COUNT] = {
-    0.0
+    180.0,0.0,0.0,0.0,180.0
   }; //initializing all with Zero
 double angles[SERVO_COUNT] = {
-    0.0
+    180.0,0.0,0.0,0.0,180.0
   }; //initializing all with Zero
 
 double inputs[SERVO_COUNT], outputs[SERVO_COUNT];
