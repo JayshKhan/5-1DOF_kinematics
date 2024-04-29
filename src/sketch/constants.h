@@ -43,7 +43,8 @@ double angles[SERVO_COUNT] = {
   }; //initializing all with Zero
 
 double inputs[SERVO_COUNT], outputs[SERVO_COUNT];
-double Kp = 1.0, Ki = 0.1, Kd = 0.0;  // Adjust PID constants
+double errors[SERVO_COUNT], integral[SERVO_COUNT], derivative[SERVO_COUNT];
+double Kp = 1.0, Ki = 1, Kd = 0.5;  // Adjust PID constants
 
 // Create PID controller objects for each servo
 PID* pids[SERVO_COUNT];

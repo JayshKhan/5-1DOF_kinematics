@@ -14,7 +14,7 @@ void setup() {
 
 
   for (int i = 0; i < SERVO_COUNT; i++) {
-    pids[i]= new PID(&inputs[i], &outputs[i], &angles[i], Kp, Ki, Kd, P_ON_E, AUTOMATIC);
+    pids[i]= new PID(&inputs[i], &outputs[i], &angles[i], Kp, Ki, Kd, P_ON_E, DIRECT);
     pids[i]->SetMode(AUTOMATIC);
     pids[i]->SetSampleTime(100);       // Set PID sample time to 100 milliseconds
     pids[i]->SetOutputLimits(0, 180);  // Set PID output limits (0-180 degrees)
@@ -34,7 +34,6 @@ void loop() {
   keyBoardControl();
   // int angle[1]={0};
   moveServosSequentially();
-  // moveServosSimultaneously();
   //  float alpha[SERVO_COUNT-1] = {0, 90, 0, 0, 90};
   //   int theta[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
   //   float a[SERVO_COUNT-1] = {0, 0, 3, 4, 3};
@@ -59,7 +58,7 @@ void moveServosSequentially() {
     //PID control
     inputs[i] = currentAngles[i];
     pids[i]->Compute();
-    // angles[i] = outputs[i];
+    angles[i] = outputs[i];
     Serial.println("output: "+String(outputs[i])+" angles: "+String(angles[i])+"");
 
     // If angle is -1 then the servo should not move
@@ -135,35 +134,34 @@ void moveServosSequentially() {
  * work in progress...
  */
 
-void moveServosSimultaneously() {
-  // Flag to track if any servo needs movement
-  bool needsUpdate = false;
+// void moveServosSimultaneously(int angles[]) {
+//   // Flag to track if any servo needs movement
+//   bool needsUpdate = false;
 
-  // Loop through each servo
-  for (int i = 0; i < SERVO_COUNT; i++) {
-    // Check if angle needs update (not -1 or different from current)
-    if (angles[i] != -1 && angles[i] != currentAngles[i]) {
-      needsUpdate = true;
-    }
-  }
+//   // Loop through each servo
+//   for (int i = 0; i < SERVO_COUNT; i++) {
+//     // Check if angle needs update (not -1 or different from current)
+//     if (angles[i] != -1 && angles[i] != currentAngles[i]) {
+//       needsUpdate = true;
+//     }
+//   }
 
-  // If any servo needs update, move them simultaneously with step-by-step approach
-  if (needsUpdate) {
-    for (int i = 0; i < SERVO_COUNT; i++) {
-      int direction = (angles[i] > currentAngles[i]) ? 1 : -1;
-      // Move towards target angle with SPEED steps
-      if (currentAngles[i] + direction * SPEED < angles[i]) {
-        currentAngles[i] += direction * SPEED;
-      } else {
-        currentAngles[i] = angles[i];
-      }
-      servos[i].write(currentAngles[i]);
-      delay(DELAY);
-    }
-  }
+//   // If any servo needs update, move them simultaneously with step-by-step approach
+//   if (needsUpdate) {
+//     for (int i = 0; i < SERVO_COUNT; i++) {
+//       int direction = (angles[i] > currentAngles[i]) ? 1 : -1;
+//       // Move towards target angle with SPEED steps
+//       if (currentAngles[i] + direction * SPEED < angles[i]) {
+//         currentAngles[i] += direction * SPEED;
+//       } else {
+//         currentAngles[i] = angles[i];
+//       }
+//       servos[i].write(currentAngles[i]);
+//     }
+//   }
 
-  delay(DELAY); // Add a delay after updates
-}
+//   delay(DELAY); // Add a delay after updates
+// }
 
 /**
  * Reset the servo to initial position
