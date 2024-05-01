@@ -4,7 +4,7 @@ Forward and inverse Kinematics of 5 DOF + 1 Gripper DOF of ROT3U Robotic Arm
 
 [//]: # (check Box)
 
-- [ ] Forward Kinematics
+- [x] Forward Kinematics
 - [ ] Inverse Kinematics
 - [ ] Simulation
 - [ ] Hardware Implementation
