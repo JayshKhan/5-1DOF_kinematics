@@ -1,5 +1,6 @@
 //
-// Created by j-ubuntuworkstation on 4/21/24.
+// Created by Jaysh Khan on 4/21/24.
+// @author Jaysh Khan
 //
 
 #ifndef CONSTANTS_H
@@ -11,7 +12,7 @@
 
 #include <math.h>
 const bool PWMDriver= false; // 0 if Servo.h
-#define SERVO_COUNT 5 // number of servos
+#define SERVO_COUNT 6 // number of servos
 #define DELAY 500 // delay between each movement
 #define SERVO_MIN_PWM 500 // minimum pulse width
 #define SERVO_MAX_PWM 2500 // maximum pulse width
@@ -22,24 +23,22 @@ const bool PWMDriver= false; // 0 if Servo.h
 #define USMAX  2400 // This is the rounded 'maximum' microsecond length based on the maximum pulse of 600
 
 
-  Adafruit_PWMServoDriver servosP[SERVO_COUNT]={Adafruit_PWMServoDriver()};
-
-
-    Servo servos[SERVO_COUNT];
+Adafruit_PWMServoDriver servosP[SERVO_COUNT]={Adafruit_PWMServoDriver()};
+Servo servos[SERVO_COUNT];
 
 
 
 int servo_pin[SERVO_COUNT] = {
-    3,5,6,9,10
+    3,5,6,9,10,11
   }; //{3,4,5,6,7,8};
 double initialAngles[SERVO_COUNT] = {
-    180.0,0.0,0.0,0.0,180.0
+    0.0,0.0,0.0,0.0,0.0,0.0
   }; //initializing all with Zero
 double currentAngles[SERVO_COUNT] = {
-    180.0,0.0,0.0,0.0,180.0
+    0.0,0.0,0.0,0.0,0.0,0.0
   }; //initializing all with Zero
 double angles[SERVO_COUNT] = {
-    180.0,0.0,0.0,0.0,180.0
+    0.0,0.0,0.0,0.0,0.0,0.0
   }; //initializing all with Zero
 
 double inputs[SERVO_COUNT], outputs[SERVO_COUNT];

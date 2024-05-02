@@ -6,9 +6,15 @@
     "board": "Arduino uno/nano",
     "sketch": "sketch/main.ino"
   },
-  "libraries": {
+  "libraries Arduino": {
     "Servo": "1.2.1",
     "Adafruit_PWMServoDriver": "3.0.2",
     "PID": "1.2.0"
+  },
+  "packages Python": {
+    "pyserial": "3.5",
+    "numpy": "1.21.5",
+    "customtkinter": "5.2.2",
+    "tkinter": "latest"
   }
 }

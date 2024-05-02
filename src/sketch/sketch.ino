@@ -31,20 +31,8 @@ void setup() {
 }
 
 void loop() {
-  keyBoardControl();
-  // int angle[1]={0};
+  keyBoardControl(); // reads from serial monitor and sets the angles
   moveServosSequentially();
-  //  float alpha[SERVO_COUNT-1] = {0, 90, 0, 0, 90};
-  //   int theta[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
-  //   float a[SERVO_COUNT-1] = {0, 0, 3, 4, 3};
-  //   float d[SERVO_COUNT-1] = {0, 0, 0, 0, 0};
-  //   Matrix4x4 * T = T_matrices(alpha, theta, a, d);
-  //   Matrix4x4 T_0_5 = forwardKinematics(T);
-  //   float x, y, z;
-  //   T_0_5.getXYZ(&x, &y, &z);
-  //   Serial.println("0X: " + String(x) + " Y: " + String(y) + " Z: " + String(z));
-  // //------------------------------------------
-  //   // for Fixing the servo at 0, 90, 180
 }
 
 /**
@@ -56,10 +44,10 @@ void loop() {
 void moveServosSequentially() {
   for (int i = 0; i < SERVO_COUNT; i++) {
     //PID control
-    inputs[i] = currentAngles[i];
-    pids[i]->Compute();
-    angles[i] = outputs[i];
-    Serial.println("output: "+String(outputs[i])+" angles: "+String(angles[i])+"");
+//    inputs[i] = currentAngles[i];
+//    pids[i]->Compute();
+//    angles[i] = outputs[i];
+//    Serial.println("output: "+String(outputs[i])+" angles: "+String(angles[i])+"");
 
     // If angle is -1 then the servo should not move
     if (angles[i] == -1 || angles[i] == currentAngles[i]) {
@@ -97,32 +85,9 @@ void moveServosSequentially() {
 
         break;
       }
-      // delay(DELAY);
+       delay(30);
     }
-    //     if (currentAngles[i] < angles[i]) {
-    //       // smoothly moving to that angle
-    //       for (int j = currentAngles[i]; j != angles[i]; j += SPEED) {
-    //         if (j + SPEED < angles[i]) {
-    //           servos[i].write(j);
-    //         } else {
-    //           servos[i].write(angles[i]);
-    //           break;
-    //         }
-    //       }
-    //     } else {
-    //       for (int j = currentAngles[i]; j != angles[i]; j -= SPEED) {
-    //         if (j - SPEED > angles[i]) {
-    //           servos[i].write(j);
-    //         } else {
-    //           servos[i].write(angles[i]);
-    //           break;
-    //         }
-    //
-    //       }
-    //     }
-
     currentAngles[i] = angles[i];
-
     delay(DELAY);
   }
 }
