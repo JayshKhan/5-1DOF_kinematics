@@ -36,7 +36,7 @@ The hardware implementation of the ROT3U robotic arm will be done using the foll
 
 ## Documentation
 
-- [Documentation Link](https://medium.com/@jayshkhan10/building-and-controlling-a-5-dof-robotic-arm-a-hands-on-guide-with-rot3u-f71c97cfd5fa)
+[//]: # (- [Documentation Link]&#40;https://medium.com/@jayshkhan10/building-and-controlling-a-5-dof-robotic-arm-a-hands-on-guide-with-rot3u-f71c97cfd5fa&#41;)
 
 [//]: # (Forward and Inverse Kinematics;https://community.robotshop.com/robots/show/xyz-positioning-using-arduino-uno-for-6-dof-robotic-arm&#41)
 
@@ -48,6 +48,13 @@ The hardware implementation of the ROT3U robotic arm will be done using the foll
 - [ ] Forward Kinematics
 - [ ] Inverse Kinematics
 - [ ] Simulation
+
+### The Cartesian Choreographers team Member ( Yup Thats The Team Name)
+
+- Jaysh Khan
+- Zain ul Abideen
+- Syed Furqan Ali
+- Rana Talal Ahmed
 
 ## references
 
