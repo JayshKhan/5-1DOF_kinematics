@@ -1,24 +1,64 @@
+"""
+This code is a simple GUI for controlling a robotic arm using servos.
+The GUI allows the user to input angles for each
+servo and sends the data to an Arduino via serial communication.
+The Arduino then controls the servos based on the input angles.
+The GUI also displays the matrix transformation based on the input angles.
+The code uses the Tkinter library for the GUI and the PySerial library for serial communication.
+
+@Author: Jaysh Khan
+
+"""
+
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
 import numpy as np
+from tkinter import messagebox
 
 from forwardKinematic import forward_kinematics
+from responses import get_error_response, get_error_rresponses_for_singularity
+# from testingCodeVariations import Mforward_kinematics
 import serial  # Import the serial library for Arduino communication
 import math
+
+# for reading from the arduino
+import threading
+import time
 
 # Constants
 COM_PORT = '/dev/ttyUSB0'
 BAUD_RATE = 9600
+arduino = None
+
+# Servo Angle Ranges
+ranges = {
+    1: (10, 180),
+    2: (0, 180),
+    3: (0, 150),
+    4: (0, 180),
+    5: (0, 180),
+    6: (0, 180),
+}
+
+
+def open_port():
+    global arduino
+    try:
+        arduino = serial.Serial(COM_PORT, BAUD_RATE)
+        print("Port opened")
+    except serial.SerialException as e:
+        print("Error opening port:", e)
+        messagebox.showerror("Error", "Error opening port. Please check the port and try again.")
 
 
 # Function to validate angle input (ensures values are within servo range)
-def validate_angle(text):
+def validate_angle(text, *args):
     try:
         if text == "":
             return True
         value = int(text)
-        if 0 <= value <= 180:  # Adjust the range based on your servo specifications
+        if 0 <= value <= 180:
             return True
         else:
             return False
@@ -26,27 +66,50 @@ def validate_angle(text):
         return False
 
 
-# Function to generate the matrix transformation (replace with your specific logic)
+def validate_all_angles():
+    flag = True
+    #     check the entries for the angles and see if they are within the range
+    for i, entry in enumerate(angle_entries):
+        #from the ranges dict get the range for the servo
+        low, high = ranges.get(i, (0, 180))
+        value = int(entry.get())
+        if value < low or value > high:
+            messagebox.showerror(f"Error Servo {i}", get_error_response(low, high))
+            flag = False
+    return flag
+
+
+def check_for_singularity():
+    flag = True
+    for i, entry in enumerate(angle_entries):
+        if i == -1:
+            # singularity Find Logic
+            messagebox.showerror(f"Singularity", get_error_rresponses_for_singularity())
+            flag = False
+    return flag
+
+
+# Function to generate the matrix transformation
 def generate_matrix(angles):
     dhs = [
         {'alpha': 0, 'a': 0, 'd': 0},
         {'alpha': math.pi / 2, 'a': 0, 'd': 0},
         {'alpha': 0, 'a': 10.5, 'd': 0},
         {'alpha': 0, 'a': 10, 'd': 0},
-        {'alpha': math.pi / 2, 'a': 0, 'd': 0},
-        {'alpha': 0, 'a': 0, 'd': 16.5},
         {'alpha': 0, 'a': 0, 'd': 0},
     ]
+    angles = [math.radians(angle) for angle in angles]
     return np.round(forward_kinematics(angles, dhs), 2)
 
 
 # Function to send data to Arduino via serial communication
 def send_to_arduino(data):
+    global arduino
     try:
-        # Replace with your Arduino's serial port and baud rate
-        arduino = serial.Serial(COM_PORT, BAUD_RATE)  # Adjust port and baud rate accordingly
+        arduino = serial.Serial(COM_PORT, BAUD_RATE)
         arduino.write(data.encode())
-        arduino.close()
+        print(arduino.readline())
+        # arduino.close()
         print("Sent data to Arduino:", data)
     except serial.SerialException as e:
         print("Error connecting to Arduino:", e)
@@ -65,7 +128,7 @@ def update_display(matrix):
 # Main GUI creation and functionality
 root = tk.Tk()
 root.title("Servo Control GUI")
-root.geometry("300x400")
+root.geometry("300x500")
 root.configure(bg="black")
 ctk.set_appearance_mode("Dark")
 
@@ -112,36 +175,52 @@ submit_button = ctk.CTkButton(root, text="Submit Angles",
 submit_button.place(relx=0.5, rely=0.8, anchor=tk.CENTER)
 submit_button.grid(row=6, column=0, columnspan=2, pady=10)
 
+xyz = ctk.CTkLabel(root, text="X: 0 \nY: 0 \nZ: 0", fg_color=("white", "black"))
+xyz.grid(row=7, column=1, columnspan=2)
+
+# button to open port
+open_button = ctk.CTkButton(root, text="Open Port",
+                            corner_radius=10,
+                            width=300,
+
+                            command=lambda: open_port())
+open_button.place(relx=0.5, rely=0.8, anchor=tk.CENTER)
+open_button.grid(row=8, column=0, columnspan=2, pady=10)
+
 
 # Function called on button press to update display and send data to Arduino
 def update_display_and_send():
-    angles = []
+    if validate_all_angles():
+        angles = []
 
-    for entry in angle_entries:
-        angles.append(int(entry.get()))
+        for entry in angle_entries:
+            angles.append(int(entry.get()))
 
-    # Generate the matrix transformation using the provided angles
-    matrix = generate_matrix(angles)
-    print(matrix)
-
-    # Update the display with the matrix
-    update_display(matrix)
-    # ignore the first servo
-    angles = angles[1:]
-    # add 0 to the end
-    angles.append(0)
-    angles.append(0)
-
-    # Prepare data to send to Arduino (replace with your format)
-    data_to_send = ",".join(str(angle) for angle in angles) + "\n"
-    print(data_to_send)
-
-    # Send data to Arduino
-    send_to_arduino(data_to_send)
+        # Generate the matrix transformation using the provided angles
+        matrix = generate_matrix(angles)
+        xyz.configure(text=f"X: {matrix[0][3]} \nY: {matrix[1][3]} \nZ: {matrix[2][3]}")
+        print(matrix)
 
 
-import threading
-import time
+        # Update the display with the matrix
+        update_display(matrix)
+
+        """
+        The following code is just to match the number of servos with the number of angles
+        that arduino serial communication expects
+        """
+        # ignore the first servo frame 0 which is fixed frame
+        angles = angles[1:]
+        # add 0 to the end
+        angles.append(0)
+        angles.append(0)
+
+        # Prepare data to send to Arduino (replace with your format)
+        data_to_send = ",".join(str(angle) for angle in angles) + "\n"
+        print(data_to_send)
+
+        # Send data to Arduino
+        send_to_arduino(data_to_send)
 
 
 def read_from_arduino():

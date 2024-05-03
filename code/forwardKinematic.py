@@ -1,3 +1,16 @@
+"""
+This script demonstrates how to calculate the forward kinematics of a 6DOF robotic arm
+using Denavit-Hartenberg parameters and homogeneous transformation matrices.
+
+The End Effector is taken as a point and its transformation matrix is calculated
+using translation and rotation matrices.
+
+then the transformation matrix is multiplied with
+the transformation matrix of the end effector
+
+@Author: Jaysh Khan
+
+"""
 import math
 import numpy as np
 
@@ -26,6 +39,9 @@ def dh_matrix(theta, alpha, a, d):
 
 
 def forward_kinematics(thetas, dhs):
+    # exclude the last joint
+    # thetas = thetas[:-1]
+    # dhs = dhs[:-1]
     """
     This function calculates the end-effector pose (homogeneous transformation matrix)
     of a 6DOF robotic arm given joint angles and DH parameters.
@@ -42,20 +58,16 @@ def forward_kinematics(thetas, dhs):
          [0, 1, 0, 0],
          [0, 0, 1, 0],
          [0, 0, 0, 1]]
+    # Calculate the transformation matrix for each joint
     for i, (theta, dh) in enumerate(zip(thetas, dhs)):
         T = np.matmul(T, dh_matrix(theta, dh['alpha'], dh['a'], dh['d']))
-    # add base length in z direction
-    T[2][3] = T[2][3] + 12
-    return T
 
-# angles = [0, 90, 90, 0, 90, 0, 0]
-#
-# thetas = [math.radians(angle) for angle in angles]
-# # thetas = [math.pi/4, math.pi/3, 0, -math.pi/2, math.pi/6]
-#
-# # Calculate end-effector pose
-# end_effector_pose = np.round(forward_kinematics(thetas, dhs), 2)
-#
-# # Print the end-effector pose (homogeneous transformation matrix)
-# end_effector_pose[2][3] = end_effector_pose[2][3] + 14
-# print(end_effector_pose)
+
+    T_4_5 = np.array([[1, 0, 0, -2.5],
+                      [0, math.cos(math.pi / 2), -math.sin(math.pi / 2), -16.8],
+                      [0, math.sin(math.pi / 2), math.cos(math.pi / 2), 0],
+                      [0, 0, 0, 1]]) # end effector transformation matrix
+    T_0_5 = np.matmul(T, T_4_5)
+    T_0_5[2][3] = T_0_5[2][3] + 11.5 # Adding the height from ground to the baseframe
+    return T_0_5
+
