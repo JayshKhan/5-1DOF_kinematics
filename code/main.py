@@ -70,7 +70,7 @@ def validate_all_angles():
     flag = True
     #     check the entries for the angles and see if they are within the range
     for i, entry in enumerate(angle_entries):
-        #from the ranges dict get the range for the servo
+        # from the ranges dict get the range for the servo
         low, high = ranges.get(i, (0, 180))
         value = int(entry.get())
         if value < low or value > high:
@@ -80,13 +80,22 @@ def validate_all_angles():
 
 
 def check_for_singularity():
-    flag = True
+    flag = False
+    s = []
     for i, entry in enumerate(angle_entries):
-        if i == -1:
-            # singularity Find Logic
-            messagebox.showerror(f"Singularity", get_error_rresponses_for_singularity())
-            flag = False
-    return flag
+        s.append(int(entry.get()))
+
+    print(s[2], s[3], s[4])
+    if s[2] == 180 and s[3] > 90 > s[4]:
+        flag = True
+
+    # Condition 2: Servo2 restricted to 180 if s3=0 or s4 < 90
+    if (s[3] == 0 or s[4] < 90) and s[2] != 180:
+        flag = True
+
+    if flag:
+        messagebox.showerror("Singularity Error", get_error_rresponses_for_singularity())
+        return False
 
 
 # Function to generate the matrix transformation
@@ -190,7 +199,7 @@ open_button.grid(row=8, column=0, columnspan=2, pady=10)
 
 # Function called on button press to update display and send data to Arduino
 def update_display_and_send():
-    if validate_all_angles():
+    if validate_all_angles() and not check_for_singularity():
         angles = []
 
         for entry in angle_entries:
@@ -200,7 +209,6 @@ def update_display_and_send():
         matrix = generate_matrix(angles)
         xyz.configure(text=f"X: {matrix[0][3]} \nY: {matrix[1][3]} \nZ: {matrix[2][3]}")
         print(matrix)
-
 
         # Update the display with the matrix
         update_display(matrix)

@@ -24,7 +24,7 @@ def get_error_response(min_value, max_value):
         "Did you mistake our input field for a lottery ticket? Keep it grounded within [min value] and [max value] for this ride.",
         "I'm all for exploring new frontiers, but let's keep our exploration within the confines of [min value] and [max value], shall we?",
         "Hmm, I think you're confusing our system with a high-stakes poker game. Stick to the safe bets between [min value] and [max value].",
-        "Looks like you're trying to give our system a heart attack with that number. Let's stick to numbers that won't cause a system meltdown, okay?",
+        "Looks like you're trying to give our system a heart attack with that number. Let's stick to numbers between [min value] and [max value] that won't cause a system meltdown, okay?",
         "I'm afraid that number just took a quantum leap out of our range. Let's bring it back down to Earth, between [min value] and [max value].",
         "Is this a math problem or a riddle? Either way, the solution lies between [min value] and [max value].",
         "If that number were a movie, it'd be rated 'NC-Not in the Calculator'. Stick to numbers within [min value] and [max value] for this feature film.",
@@ -37,11 +37,12 @@ def get_error_response(min_value, max_value):
 
 def get_error_rresponses_for_singularity():
     funny_responses = [
-        "Oh no! You've hit a singularity! This is like dividing by zero. Try a different set of angles.",
-        "Uh oh! Looks like your angle array is suffering from a serious case of 'too close for comfort.' Reshaping the design to avoid a singularity... forever.",
-        "Yikes! Those angles in your array are more dangerous than a black hole convention. Going to have to put a pin in this one to avoid a self-collision catastrophe.",
-        "Hold on there! Building a time machine with your angle array, are we? This path leads to a singularity, not someplace cool. Better adjust those angles before you break the space-time continuum.",
-        "You sure those angles in your array aren't a typo? Because the only thing they're designing is a recipe for disaster. Let's revisit those angles and avoid a self-collision incident.",
-        "Houston, we have a problem... with your angle array! They're creating a situation more tense than a taut rubber band. Back to the drawing board to avoid a self-inflicted ouch.",
+        "Whoopsie! Your robot seems to be trying out some breakdancing moves. But watch out, it might break itself!",
+        "Oh no! Your robot is feeling a bit confused. It's trying to give itself a high-five, but it might end up with a robot slap!",
+        "Uh-oh! Your robot is getting adventurous, attempting a game of Twister. But be careful, it might twist itself into a robot knot!",
+        "Well, well, well! Your robot seems to be practicing its yoga moves. Downward dog might be fine, but it's best to avoid the downward robot crash!",
+        "Hold on a sec! Your robot is feeling a bit rebellious, trying to give itself a pat on the back. But watch out, it might end up with a robot bump!",
+        "Oops-a-daisy! Your robot is feeling playful, attempting some cartwheels. But be cautious, it might cartwheel into a robot collision!"
     ]
+
     return random.choice(funny_responses)

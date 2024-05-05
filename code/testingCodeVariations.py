@@ -1,87 +1,74 @@
-"""
-This file contain the Hit and trail testing code for the
-forward kinematics of a 6-DOF manipulator
-@Author: Jaysh Khan
-"""
+# learning to plot
 
+import matplotlib.pyplot as plt
 import numpy as np
-import math
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.widgets import Slider
 
-"""
-   Function to generate the Denavit-Hartenberg matrix for a given set of parameters
-   :param a:
-   :param alpha:
-   :param d:
-   :param thetha:
-   :return: np array A Transformation matrix of 4x4
-"""
+# Define the number of joints
+num_joints = 4
 
+# Set up the base point for the first joint
+base_x = 0
+base_y = 0
+base_z = 0
 
-def dh_matrix(a, alpha, d, thetha):
-    ct = math.cos(thetha)
-    st = math.sin(thetha)
-    ca = math.cos(alpha)
-    sa = math.sin(alpha)
-    return np.array([[ct, -st * ca, st * sa, a * ct],
-                     [st, ct * ca, -ct * sa, a * st],
-                     [0, sa, ca, d],
-                     [0, 0, 0, 1]])
+# Define the length of each link
+link_length = 1
 
+# Define initial angles for each joint (in degrees)
+initial_angles = [45, 60, 60, 60]
 
-# DH parameters for testing
-thetha = [0, 0, 0, 0]
-a = [0, 0, 10.5, 10]
-alpha = [0, 90, 0, 0]
-d = [0, 0, 0, 0]
-
-"""
-Function to compute the forward kinematics of a 6-DOF manipulator
-:param angles: list of joint angles
-:return: np array of the end effector position
-"""
+# Create the plot figure
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
 
 
-def Mforward_kinematics(angles, a, d, alpha):
-    # convert angles to radians
+# Function to update plot based on slider values
+def update(val):
+    global base_x, base_y, base_z  # Declare base_x, base_y, and base_z as global
 
-    theta = [math.radians(angle) for angle in angles]
-    alpha = [math.radians(angle) for angle in alpha]
+    ax.clear()
+    ax.set_xlim3d(-2, 2)
+    ax.set_ylim3d(-2, 2)
+    ax.set_zlim3d(-2, 2)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
 
-    # theta =[math.radians(angle) for angle in theta]
+    angles = [s.val for s in sliders]
 
-    # print(theta)
+    # Rotation about base Z for the first joint
+    x_end = base_x + link_length * np.cos(np.radians(angles[0]))
+    y_end = base_y + link_length * np.sin(np.radians(angles[0]))
+    z_end = base_z
+    ax.plot([base_x, x_end], [base_y, y_end], [base_z, z_end], '-o', linewidth=2, markersize=5, color='blue')
 
-    T_0_1 = dh_matrix(a[0], alpha[0], d[0], theta[1])  # ignore the first joint
+    # Update the base point for subsequent joints
+    base_x = x_end
+    base_y = y_end
+    base_z = z_end
 
-    T_1_2 = dh_matrix(a[1], alpha[1], d[1], theta[2])
-    T_2_3 = dh_matrix(a[2], alpha[2], d[2], theta[3])
-    T_3_4 = dh_matrix(a[3], alpha[3], d[3], theta[4])
-    # T_4_5 = dh_matrix(a[4], alpha[4], d[5], theta[5])
-    # T_5_6 = dh_matrix(a[5], alpha[5], d[6], thetha[6])
+    # Rotation about base X for the remaining joints
+    for i in range(1, num_joints):
+        x_end = base_x
+        y_end = base_y + link_length * np.sin(np.radians(angles[i]))
+        z_end = base_z + link_length * np.cos(np.radians(angles[i]))
+        ax.plot([base_x, x_end], [base_y, y_end], [base_z, z_end], '-o', linewidth=2, markersize=5, color='blue')
+        base_x = x_end
+        base_y = y_end
+        base_z = z_end
 
-    T_0_2 = np.matmul(T_0_1, T_1_2) # ignore the first joint
-    T_0_3 = np.matmul(T_1_2, T_2_3)
-    T_0_4 = np.matmul(T_0_3, T_3_4)
-    # T_0_5 = np.matmul(T_0_4, T_4_5)
+    fig.canvas.draw_idle()
 
-    T_4_5 = np.array([[1, 0, 0, -2.5],
-                      [0, math.cos(math.pi/2), -math.sin(math.pi/2), 16.8],
-                      [0, math.sin(math.pi/2), math.cos(math.pi/2), 0],
-                      [0, 0, 0, 1]])
-    T_0_5 = np.matmul(T_0_4, T_4_5)
-    T_0_5[2][3]=T_0_5[2][3]+12
 
-    return np.round(T_0_5,2)
+sliders = []
+for i in range(num_joints):
+    axslider = plt.axes([0.1, 0.95 - i * 0.1, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+    slider = Slider(axslider, f'Joint {i + 1}', 0, 180, valinit=initial_angles[i])
+    slider.on_changed(update)
+    sliders.append(slider)
 
-    # add base height in z direction
-    # matrix[2, 3] += 12
-    # return matrix
+update(0)  # Update plot with initial values
 
-# For testing / Debug code
-# print("End effector position")
-# last = forward_kinematics(thetha, a, d, alpha)
-# # round off the values to 2 decimal places print the values of x y z
-# last = np.round(last, 2)
-# print(f"X: {last[0, 3]} Y: {last[1, 3]} Z: {last[2, 3] + 12}")
-#
-# print(Mforward_kinematics(thetha,a,d,alpha))
+plt.show()
