@@ -24,7 +24,6 @@ import math
 
 import subprocess
 
-
 # for reading from the arduino
 import threading
 
@@ -48,7 +47,7 @@ def open_port():
     global arduino
     # giving permission to access the port
     try:
-        cmd = ['chmod' ,'777' ,f'{COM_PORT}']
+        cmd = ['chmod', '777', f'{COM_PORT}']
         subprocess.check_output(['sudo', '-S'] + cmd, input='52974\n', encoding='utf-8')
     except subprocess.CalledProcessError as e:
         print("An error occurred while trying to execute the command:", e)
@@ -95,14 +94,10 @@ def check_for_singularity():
         s.append(int(entry.get()))
 
     print(s[2], s[3], s[4])
-    if s[3]>=90 and s[4]>=90 and s[2]>=90:
+    if s[3] >= 90 and s[4] >= 90 and s[2] >= 90:
         flag = True
     if s[2] == 180 and s[3] > 90 > s[4]:
         flag = True
-
-    # Condition 2: Servo2 restricted to 180 if s3=0 or s4 < 90
-    # if (s[3] == 0 or s[4] < 90) and s[2] != 180:
-    #     flag = True
 
     if flag:
         messagebox.showerror("Singularity Error", get_error_rresponses_for_singularity())
@@ -156,7 +151,7 @@ cell_size = 30
 padding = 5
 
 
-# Define function to create a single cell
+# Define function to create a single cell for the matrix display
 def create_cell(canvas, value, x, y, background="white", font=("Arial", 16)):
     x1 = x * (cell_size + padding)
     y1 = y * (cell_size + padding)

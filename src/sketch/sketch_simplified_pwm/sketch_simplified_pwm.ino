@@ -1,4 +1,10 @@
-
+/*
+*   This code is for controlling 6 servo motors using PCA9685 servo driver.
+*   The code reads the angles for each servo from the serial monitor and moves the servo to that angle.
+*   The angles should be separated by commas and should be in the range of 0 to 180.
+*   The code moves the servo to the target angle with a speed of 5 degrees per step.
+*   @author: Jaysh Khan
+*/
 #include <Adafruit_PWMServoDriver.h>
 
 #define SERVO_COUNT 6
@@ -25,32 +31,25 @@ double targetAngles[SERVO_COUNT] = {
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); // Initialize serial communication
 
   for(int i=0;i<SERVO_COUNT;i++)
   {
-    servos[i].begin();
-    servos[i].setOscillatorFrequency(27000000);
-    servos[i].setPWMFreq(60);
+    servos[i].begin(); // Initialize the servo driver
+    servos[i].setOscillatorFrequency(27000000); // The int.oscillator frequency is 27MHz
+    servos[i].setPWMFreq(60); // Analog servos run at ~60 Hz updates
   }
-    // moveServosSequentially();
 }
 
 void loop() {
-  keyBoardControl();
-  moveServosSequentially();
+  pySerialControl(); // Read angles from serial monitor sent by Python script
+  moveServosSequentially(); // Move servos to target angles
 }
+
 void moveServosSequentially() {
   for (int i = 0; i < SERVO_COUNT; i++) {
-  // for (int i = SERVO_COUNT; i!=0; i--) {
-    // If angle is -1 then the servo should not moveSERVO_COUNT
     if (targetAngles[i] == -1 || targetAngles[i] == currentAngles[i]) {
       continue;
-    }
-    if(targetAngles[2]>150)
-    {
-      Serial.println("Moving to maximum it can Go");
-      targetAngles[2]=150;
     }
     int direction = targetAngles[i] > currentAngles[i] ? 1 : -1;
     for (int j = currentAngles[i]; j != targetAngles[i]; j += direction * SPEED) {
@@ -85,7 +84,7 @@ int angleToPulse(int ang,int i) {
   return pulse;
 }
 
-void keyBoardControl() {
+void pySerialControl() {
   if (Serial.available() > 0) {
     String inputString = Serial.readStringUntil('\n');  // Read string from serial until newline character
 
