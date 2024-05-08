@@ -7,7 +7,7 @@
 
 Adafruit_PWMServoDriver servos[SERVO_COUNT] = {Adafruit_PWMServoDriver()};
 int Min_PWM[SERVO_COUNT]= {125,110,125,100,125,125};
-int Max_PWM[SERVO_COUNT]= {635,570,575,555,575,575};
+int Max_PWM[SERVO_COUNT]= {600,570,575,555,575,575};
 
 
 int servo_pin[SERVO_COUNT] = {
@@ -33,6 +33,7 @@ void setup() {
     servos[i].setOscillatorFrequency(27000000);
     servos[i].setPWMFreq(60);
   }
+    // moveServosSequentially();
 }
 
 void loop() {
@@ -41,7 +42,8 @@ void loop() {
 }
 void moveServosSequentially() {
   for (int i = 0; i < SERVO_COUNT; i++) {
-    // If angle is -1 then the servo should not move
+  // for (int i = SERVO_COUNT; i!=0; i--) {
+    // If angle is -1 then the servo should not moveSERVO_COUNT
     if (targetAngles[i] == -1 || targetAngles[i] == currentAngles[i]) {
       continue;
     }
@@ -75,7 +77,7 @@ void moveServosSequentially() {
 }
 
 int angleToPulse(int ang,int i) {
-  int pulse = map(ang, 0, 180, 100, 555);  // map angle of 0 to 180 to Servo min and Servo max
+  int pulse = map(ang, 0, 180, Min_PWM[i], Max_PWM[i]);  // map angle of 0 to 180 to Servo min and Servo max
   Serial.print("Angle: ");
   Serial.print(ang);
   Serial.print(" pulse: ");

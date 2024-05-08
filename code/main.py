@@ -22,9 +22,11 @@ from responses import get_error_response, get_error_rresponses_for_singularity
 import serial  # Import the serial library for Arduino communication
 import math
 
+import subprocess
+
+
 # for reading from the arduino
 import threading
-import time
 
 # Constants
 COM_PORT = '/dev/ttyUSB0'
@@ -33,7 +35,7 @@ arduino = None
 
 # Servo Angle Ranges
 ranges = {
-    1: (10, 180),
+    1: (0, 180),
     2: (0, 180),
     3: (0, 150),
     4: (0, 180),
@@ -44,9 +46,16 @@ ranges = {
 
 def open_port():
     global arduino
+    # giving permission to access the port
+    try:
+        cmd = ['chmod' ,'777' ,f'{COM_PORT}']
+        subprocess.check_output(['sudo', '-S'] + cmd, input='52974\n', encoding='utf-8')
+    except subprocess.CalledProcessError as e:
+        print("An error occurred while trying to execute the command:", e)
+
     try:
         arduino = serial.Serial(COM_PORT, BAUD_RATE)
-        print("Port opened")
+        print("Access Granted")
     except serial.SerialException as e:
         print("Error opening port:", e)
         messagebox.showerror("Error", "Error opening port. Please check the port and try again.")
@@ -86,16 +95,18 @@ def check_for_singularity():
         s.append(int(entry.get()))
 
     print(s[2], s[3], s[4])
+    if s[3]>=90 and s[4]>=90 and s[2]>=90:
+        flag = True
     if s[2] == 180 and s[3] > 90 > s[4]:
         flag = True
 
     # Condition 2: Servo2 restricted to 180 if s3=0 or s4 < 90
-    if (s[3] == 0 or s[4] < 90) and s[2] != 180:
-        flag = True
+    # if (s[3] == 0 or s[4] < 90) and s[2] != 180:
+    #     flag = True
 
     if flag:
         messagebox.showerror("Singularity Error", get_error_rresponses_for_singularity())
-        return False
+        return True
 
 
 # Function to generate the matrix transformation
@@ -188,7 +199,7 @@ xyz = ctk.CTkLabel(root, text="X: 0 \nY: 0 \nZ: 0", fg_color=("white", "black"))
 xyz.grid(row=7, column=1, columnspan=2)
 
 # button to open port
-open_button = ctk.CTkButton(root, text="Open Port",
+open_button = ctk.CTkButton(root, text="Grant Access",
                             corner_radius=10,
                             width=300,
 
