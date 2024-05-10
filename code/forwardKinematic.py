@@ -39,9 +39,6 @@ def dh_matrix(theta, alpha, a, d):
 
 
 def forward_kinematics(thetas, dhs):
-    # exclude the last joint
-    # thetas = thetas[:-1]
-    # dhs = dhs[:-1]
     """
     This function calculates the end-effector pose (homogeneous transformation matrix)
     of a 6DOF robotic arm given joint angles and DH parameters.
@@ -54,20 +51,20 @@ def forward_kinematics(thetas, dhs):
     Returns:
         A 4x4 homogeneous transformation matrix representing the end-effector pose.
     """
-    T = [[1, 0, 0, 0],
-         [0, 1, 0, 0],
-         [0, 0, 1, 0],
-         [0, 0, 0, 1]]
-    # Calculate the transformation matrix for each joint
-    for i, (theta, dh) in enumerate(zip(thetas, dhs)):
-        T = np.matmul(T, dh_matrix(theta, dh['alpha'], dh['a'], dh['d']))
+    T_0_4 = [[1, 0, 0, 0],
+             [0, 1, 0, 0],
+             [0, 0, 1, 0],
+             [0, 0, 0, 1]]
+    # Calculate the transformation matrix for each joint and multiply them together
+    # to get the transformation matrix from the base frame to the last joint.
 
+    for i, (theta, dh) in enumerate(zip(thetas, dhs)):
+        T_0_4 = np.matmul(T_0_4, dh_matrix(theta, dh['alpha'], dh['a'], dh['d']))
 
     T_4_5 = np.array([[1, 0, 0, -2.5],
                       [0, math.cos(math.pi / 2), -math.sin(math.pi / 2), -16.8],
                       [0, math.sin(math.pi / 2), math.cos(math.pi / 2), 0],
-                      [0, 0, 0, 1]]) # end effector transformation matrix
-    T_0_5 = np.matmul(T, T_4_5)
-    T_0_5[2][3] = T_0_5[2][3] + 11.5 # Adding the height from ground to the baseframe
+                      [0, 0, 0, 1]])  # end effector transformation matrix
+    T_0_5 = np.matmul(T_0_4, T_4_5)
+    T_0_5[2][3] = T_0_5[2][3] + 11.5  # Adding the height from ground to the baseframe
     return T_0_5
-
