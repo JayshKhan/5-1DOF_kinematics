@@ -66,5 +66,5 @@ def forward_kinematics(thetas, dhs):
                       [0, math.sin(math.pi / 2), math.cos(math.pi / 2), 0],
                       [0, 0, 0, 1]])  # end effector transformation matrix
     T_0_5 = np.matmul(T_0_4, T_4_5)
-    T_0_5[2][3] = T_0_5[2][3] + 11.5  # Adding the height from ground to the baseframe
+    T_0_5[2][3] = T_0_5[2][3]# + 11.5  # Adding the height from ground to the baseframe
     return T_0_5

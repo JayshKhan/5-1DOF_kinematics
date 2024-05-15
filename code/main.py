@@ -211,6 +211,8 @@ def update_display_and_send():
         for entry in angle_entries:
             angles.append(int(entry.get()))
 
+        print(f"angles: {angles}")
+
         # Generate the matrix transformation using the provided angles
         matrix = generate_matrix(angles)
         xyz.configure(text=f"X: {matrix[0][3]} \nY: {matrix[1][3]} \nZ: {matrix[2][3]}")
