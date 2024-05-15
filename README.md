@@ -45,7 +45,7 @@ The hardware implementation of the ROT3U robotic arm will be done using the foll
 
 [//]: # (check Box)
 
-- [ ] Forward Kinematics
+- [X] Forward Kinematics
 - [ ] Inverse Kinematics
 - [ ] Simulation
 
@@ -60,3 +60,11 @@ The hardware implementation of the ROT3U robotic arm will be done using the foll
 
 - [Denavit-Hartenberg (DH) parameters](https://en.wikipedia.org/wiki/Denavit%E2%80%93Hartenberg_parameters)
 - [Geometric method for Inverse Kinematics](https://en.wikipedia.org/wiki/Inverse_kinematics)
+
+### TODO:
+
+- [x] Forward Kinematics
+- [ ] Inverse Kinematics
+- [ ] Add Visualization in GUI
+- [ ] Simulation
+- [ ] Hardware Implementation
