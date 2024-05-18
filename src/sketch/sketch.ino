@@ -1,164 +1,77 @@
-
 /*
- * This code is for controlling the servo motors of ROT3U 5+1 DOF Robotic Arm using the Arduino board.
- * The code is written in C++ and uses the Arduino library for controlling the servo motors.
- * @author Jaysh Khan
- */
+*   This code is for controlling 6 servo motors using Servo.h.
+*   The code reads the angles for each servo from the serial monitor and moves the servo to that angle.
+*   The angles should be separated by commas and should be in the range of 0 to 180.
+*   The code moves the servo to the target angle with a speed of 5 degrees per step.
+*   @author: Jaysh Khan
+*/
 
-#include "./forwardkinematics.h"
+#include <Servo.h>
+
+#define SERVO_COUNT 6
+#define DELAY 500
+#define SPEED 5
+
+Servo servos[SERVO_COUNT] = {};
+int Min_PWM[SERVO_COUNT]= {500};
+int Max_PWM[SERVO_COUNT]= {2500};
+
+
+int servo_pin[SERVO_COUNT] = {
+    2,3,4,5,6,7
+  }; //{3,4,5,6,7,8};
+double initialAngles[SERVO_COUNT] = {
+    0.0,0.0,0.0,0.0,0.0,0.0
+  }; //initializing all with Zero
+double currentAngles[SERVO_COUNT] = {
+    0.0,0.0,0.0,0.0,0.0,0.0
+  }; //initializing all with Zero
+double targetAngles[SERVO_COUNT] = {
+    0,0,0,0,0,0
+  }; //initializing all with Zero
+
 
 void setup() {
-  Serial.begin(9600);  //initialize serial communication
-  // Initialize the PID controller for the servos
+  Serial.begin(9600); // Initialize serial communication
 
-
-
-  for (int i = 0; i < SERVO_COUNT; i++) {
-    pids[i]= new PID(&inputs[i], &outputs[i], &angles[i], Kp, Ki, Kd, P_ON_E, DIRECT);
-    pids[i]->SetMode(AUTOMATIC);
-    pids[i]->SetSampleTime(100);       // Set PID sample time to 100 milliseconds
-    pids[i]->SetOutputLimits(0, 180);  // Set PID output limits (0-180 degrees)
-
-    if (PWMDriver) {
-      servosP[i].begin();
-      servosP[i].setOscillatorFrequency(27000000);
-      servosP[i].setPWMFreq(SERVO_FREQ);
-    } else {
-      servos[i].attach(servo_pin[i], SERVO_MIN_PWM, SERVO_MAX_PWM);
-      Serial.println("Attaching :"+String(i+1)+" to "+String(servo_pin[i]));
-    }
+  for(int i=0;i<SERVO_COUNT;i++)
+  {
+    servos[i].attach(servo_pin[i]);
   }
 }
 
 void loop() {
-  keyBoardControl(); // reads from serial monitor and sets the angles
-  moveServosSequentially();
+  pySerialControl(); // Read angles from serial monitor sent by Python script
+  moveServosSequentially(); // Move servos to target angles
 }
-
-/**
- * Move the servos to the specified angles one servo at a time
- * @param angles array of angles for each servo
- * @author Jaysh Khan
- */
 
 void moveServosSequentially() {
   for (int i = 0; i < SERVO_COUNT; i++) {
-    //PID control
-//    inputs[i] = currentAngles[i];
-//    pids[i]->Compute();
-//    angles[i] = outputs[i];
-//    Serial.println("output: "+String(outputs[i])+" angles: "+String(angles[i])+"");
-
-    // If angle is -1 then the servo should not move
-    if (angles[i] == -1 || angles[i] == currentAngles[i]) {
+    if (targetAngles[i] == -1 || targetAngles[i] == currentAngles[i]) {
       continue;
     }
-    int direction = angles[i] > currentAngles[i] ? 1 : -1;
-    for (int j = currentAngles[i]; j != angles[i]; j += direction * SPEED) {
-   
-      if (direction == -1 && j - SPEED > angles[i]) {
-        if (PWMDriver) {
-          servosP[i].setPWM(servo_pin[i], 0, angleToPulse(j));
-          // servosP[i].writeMicroseconds(servo_pin[i],angleToMS(j));
-        } else {
-          Serial.println("Moving to: "+String(j));
-          servos[i].write(j);
-        }
-      } else if (direction == 1 && j + SPEED < angles[i]) {
-        if (PWMDriver) {
-          servosP[i].setPWM(servo_pin[i], 0, angleToPulse(j));
-          // servosP[i].writeMicroseconds(servo_pin[i],angleToMS(j));
-        } else {
-          Serial.println("Moving to: "+String(j));
+    int direction = targetAngles[i] > currentAngles[i] ? 1 : -1;
+    for (int j = currentAngles[i]; j != targetAngles[i]; j += direction * SPEED) {
+
+      if (direction == -1 && j - SPEED > targetAngles[i]) {
           servos[i].write(j);
 
-        }
+      } else if (direction == 1 && j + SPEED < targetAngles[i]) {
+          servos[i].write(j);
       } else {
-        if (PWMDriver) {
-          servosP[i].setPWM(servo_pin[i], 0, angleToPulse(angles[i]));
-          // servos[i].writeMicroseconds(servo_pin[i],angleToMS(angles[i]));
-        } else {
-          Serial.println("Moving to: "+String(angles[i]));
-          servos[i].write(angles[i]);
-        }
-
-
+          servos[i].write(targetAngles[i]);
         break;
       }
        delay(30);
     }
-    currentAngles[i] = angles[i];
+    currentAngles[i] = targetAngles[i];
     delay(DELAY);
   }
 }
 
-/**
- * Move the servos to the specified angles simultaneously
- * @param angles array of angles for each servo
- * @author Jaysh Khan
- * work in progress...
- */
-
-// void moveServosSimultaneously(int angles[]) {
-//   // Flag to track if any servo needs movement
-//   bool needsUpdate = false;
-
-//   // Loop through each servo
-//   for (int i = 0; i < SERVO_COUNT; i++) {
-//     // Check if angle needs update (not -1 or different from current)
-//     if (angles[i] != -1 && angles[i] != currentAngles[i]) {
-//       needsUpdate = true;
-//     }
-//   }
-
-//   // If any servo needs update, move them simultaneously with step-by-step approach
-//   if (needsUpdate) {
-//     for (int i = 0; i < SERVO_COUNT; i++) {
-//       int direction = (angles[i] > currentAngles[i]) ? 1 : -1;
-//       // Move towards target angle with SPEED steps
-//       if (currentAngles[i] + direction * SPEED < angles[i]) {
-//         currentAngles[i] += direction * SPEED;
-//       } else {
-//         currentAngles[i] = angles[i];
-//       }
-//       servos[i].write(currentAngles[i]);
-//     }
-//   }
-
-//   delay(DELAY); // Add a delay after updates
-// }
-
-/**
- * Reset the servo to initial position
- */
-
-void reset() {
-  for (int i = 0; i < SERVO_COUNT; i++) {
-    angles[i] = initialAngles[i];
-  }
-  moveServosSequentially();
-}
 
 
-
-int angleToPulse(int ang) {
-  int pulse = map(ang, 0, 180, SERVO_MIN_PWM, SERVO_MAX_PWM);  // map angle of 0 to 180 to Servo min and Servo max
-  Serial.print("Angle: ");
-  Serial.print(ang);
-  Serial.print(" pulse: ");
-  Serial.println(pulse);
-  return pulse;
-}
-int angleToMS(int ang) {
-  int ms = map(ang, 0, 180, USMIN, USMAX);  // map angle of 0 to 180 to Servo min and Servo max
-  Serial.print("Angle: ");
-  Serial.print(ang);
-  Serial.print(" MS: ");
-  Serial.println(ms);
-  return ms;
-}
-
-void keyBoardControl() {
+void pySerialControl() {
   if (Serial.available() > 0) {
     String inputString = Serial.readStringUntil('\n');  // Read string from serial until newline character
 
@@ -183,11 +96,14 @@ void keyBoardControl() {
     for (int i = 0; i < SERVO_COUNT; i++) {
       int newAngle = anglesArray[i].toDouble();
       if (newAngle >= 0 && newAngle <= 180) {
-        angles[i] = newAngle;
-        Serial.println("New angles for servo " + String(i) + ": " + String(angles[i]));
+        targetAngles[i] = newAngle;
+        Serial.println("New angles for servo " + String(i) + ": " + String(targetAngles[i]));
       } else {
         Serial.println("Invalid angle for servo " + String(i) + ". Enter a number between 0 and 180.");
       }
     }
   }
 }
+
+
+

@@ -12,6 +12,7 @@ the transformation matrix of the end effector
 
 """
 import math
+
 import numpy as np
 
 
@@ -39,32 +40,78 @@ def dh_matrix(theta, alpha, a, d):
 
 
 def forward_kinematics(thetas, dhs):
-    """
-    This function calculates the end-effector pose (homogeneous transformation matrix)
-    of a 6DOF robotic arm given joint angles and DH parameters.
+    theta_ig, theta1, theta2, theta3, theta4, theta_ig2 = thetas
+    print(f'getting angles for theta1={theta1}, theta2={theta2}, theta3={theta3}, theta4={theta4}')
+    """Calculates forward kinematics with the provided DH table.
 
-    Args:
-        thetas (list): A list of joint angles (radians) for each joint.
-        dhs (list): A list of DH parameter dictionaries for each link.
-            Each dictionary should have keys 'alpha', 'a', and 'd'.
+        Args:
+            theta1: Angle of joint 1 (radians).
+            theta2: Angle of joint 2 (radians).
+            theta3: Angle of joint 3 (radians).
 
-    Returns:
-        A 4x4 homogeneous transformation matrix representing the end-effector pose.
-    """
-    T_0_4 = [[1, 0, 0, 0],
-             [0, 1, 0, 0],
-             [0, 0, 1, 0],
-             [0, 0, 0, 1]]
-    # Calculate the transformation matrix for each joint and multiply them together
-    # to get the transformation matrix from the base frame to the last joint.
+        Returns:
+            A numpy array [x, y, z] representing the end-effector position.
+        """
+    T0_1 = np.array([
+        [np.cos(theta1), -np.sin(theta1) * np.cos(dhs[1]['alpha']), np.sin(theta1) * np.sin(dhs[1]['alpha']),
+         dhs[1]['a'] * np.cos(theta1)],
+        [np.sin(theta1), np.cos(theta1) * np.cos(dhs[1]['alpha']), -np.cos(theta1) * np.sin(dhs[1]['alpha']),
+         dhs[1]['a'] * np.sin(theta1)],
+        [0, np.sin(dhs[1]['alpha']), np.cos(dhs[1]['alpha']), dhs[1]['d']],
+        [0, 0, 0, 1]
+    ])
+    T1_2 = np.array([
+        [np.cos(theta2), -np.sin(theta2) * np.cos(dhs[2]['alpha']), np.sin(theta2) * np.sin(dhs[2]['alpha']),
+         dhs[2]['a'] * np.cos(theta2)],
+        [np.sin(theta2), np.cos(theta2) * np.cos(dhs[2]['alpha']), -np.cos(theta2) * np.sin(dhs[2]['alpha']),
+         dhs[2]['a'] * np.sin(theta2)],
+        [0, np.sin(dhs[2]['alpha']), np.cos(dhs[2]['alpha']), dhs[2]['d']],
+        [0, 0, 0, 1]
+    ])
+    T2_3 = np.array([
+        [np.cos(theta3), -np.sin(theta3) * np.cos(dhs[3]['alpha']), np.sin(theta3) * np.sin(dhs[3]['alpha']),
+         dhs[3]['a'] * np.cos(theta3)],
+        [np.sin(theta3), np.cos(theta3) * np.cos(dhs[3]['alpha']), -np.cos(theta3) * np.sin(dhs[3]['alpha']),
+         dhs[3]['a'] * np.sin(theta3)],
+        [0, np.sin(dhs[3]['alpha']), np.cos(dhs[3]['alpha']), dhs[3]['d']],
+        [0, 0, 0, 1]
+    ])
+    T3_4 = np.array([
+        [np.cos(theta4), -np.sin(theta4) * np.cos(dhs[4]['alpha']), np.sin(theta4) * np.sin(dhs[4]['alpha']),
+         dhs[4]['a'] * np.cos(theta4)],
+        [np.sin(theta4), np.cos(theta4) * np.cos(dhs[4]['alpha']), -np.cos(theta4) * np.sin(dhs[4]['alpha']),
+         dhs[4]['a'] * np.sin(theta4)],
+        [0, np.sin(dhs[4]['alpha']), np.cos(dhs[4]['alpha']), dhs[4]['d']],
+        [0, 0, 0, 1]
+    ])
 
-    for i, (theta, dh) in enumerate(zip(thetas, dhs)):
-        T_0_4 = np.matmul(T_0_4, dh_matrix(theta, dh['alpha'], dh['a'], dh['d']))
+    T_EOF = np.array([
+        [1, 0, 0, 0],
+        [0, np.cos(np.pi / 2), -np.sin(np.pi / 2), -16.8],
+        [0, np.sin(np.pi / 2), np.cos(np.pi / 2), 0],
+        [0, 0, 0, 1]
+    ])
+    # Calculate the total transformation from base to end-effector
+    T0_4 = T0_1 @ T1_2 @ T2_3 @ T3_4 @ T_EOF
 
-    T_4_5 = np.array([[1, 0, 0, -2.5],
-                      [0, math.cos(math.pi / 2), -math.sin(math.pi / 2), -16.8],
-                      [0, math.sin(math.pi / 2), math.cos(math.pi / 2), 0],
-                      [0, 0, 0, 1]])  # end effector transformation matrix
-    T_0_5 = np.matmul(T_0_4, T_4_5)
-    T_0_5[2][3] = T_0_5[2][3] + 11.5  # Adding the height from ground to the baseframe
-    return T_0_5
+    # Extract the end-effector position
+    x = T0_4[0, 3]
+    y = T0_4[1, 3]
+    z = T0_4[2, 3]
+
+    return T0_4
+
+
+'''
+Below Code is For manual Testing the Thetas Recieved from Inverse Kinematic
+'''
+angles = [0.0, 1.5707963267948966, 1.281950912444666, 0.8007330786079955, 3.1166650043481083, 0.0]
+dhs = [
+    {'alpha': 0, 'a': 0, 'd': 0},
+    {'alpha': math.pi / 2, 'a': 0, 'd': 0},
+    {'alpha': math.pi, 'a': 10.5, 'd': 0},
+    {'alpha': 0, 'a': 10, 'd': 0},
+    {'alpha': 0, 'a': 0, 'd': 0},
+]
+
+print(np.round(forward_kinematics(angles, dhs), 2))

@@ -12,8 +12,8 @@
 #define SPEED 5
 
 Adafruit_PWMServoDriver servos[SERVO_COUNT] = {Adafruit_PWMServoDriver()};
-int Min_PWM[SERVO_COUNT]= {125,110,125,100,125,125};
-int Max_PWM[SERVO_COUNT]= {600,570,575,555,575,575};
+int Min_PWM[SERVO_COUNT]= {125,110,125,125,130,125};
+int Max_PWM[SERVO_COUNT]= {600,570,575,575,575,575};
 
 
 int servo_pin[SERVO_COUNT] = {
