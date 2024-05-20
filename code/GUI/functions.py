@@ -153,8 +153,9 @@ def adjust_to_zero(value, threshold=1e-5):
     return value
 
 
-def find_best_angle(solutions):
+def find_best_angle(solutions,app):
     print(f'Solution Found {len(solutions)}')
+
     valid_solutions = []
     for solution in solutions:
         solution = [math.degrees(angle) for angle in solution]
@@ -172,6 +173,7 @@ def find_best_angle(solutions):
     # print(f'valid solutions: {valid_solutions}')
 
     # find the closest solution to the current angles
+    current_angles = [app.current_angles[1], app.current_angles[2], app.current_angles[3], app.current_angles[4]]
     closest_solution = None
     min_distance = float('inf')
     for solution in valid_solutions:
@@ -219,17 +221,18 @@ def update_display_and_send(angles, app):
         angles = angles[1:]
         # add 0 to the end
         angles.append(0)
+        angles.append(0)
 
         servo_mode = str(app.servo_mode_entry.get())
         mode = "s" if servo_mode.startswith("Seq") else "c"
         # Prepare data to send to Arduino (replace with your format)
-        data_to_send = ",".join(str(angle) for angle in angles) + "," + mode + "\n"
+        data_to_send = ",".join(str(round(angle,4)) for angle in angles) + "," + mode + "\n"
         print(data_to_send)
 
         # Send data to Arduino
         send_to_arduino(data_to_send, app)
         # updating the current angles
-        current_angles = angles
+        app.current_angles = angles
 
 
 def inverse_update_display_and_send(app):
@@ -244,7 +247,7 @@ def inverse_update_display_and_send(app):
     print(f"X: {x}, Y: {y}, Z: {z}")
     solutions = app.kinematic.inverse([x, y, z], app.matplotlib_canvas)
 
-    solution, valid_solutions = find_best_angle(solutions)
+    solution, valid_solutions = find_best_angle(solutions,app)
 
     if not solution:
         response = get_error_rresponses_for_singularity()

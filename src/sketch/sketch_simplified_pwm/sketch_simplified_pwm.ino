@@ -118,7 +118,7 @@ void moveServosSimultaneously() {
       servos[i].setPWM(servo_pin[i], 0, angleToPulse(nextAngle, i));
       currentAngles[i] = nextAngle;
     }
-    delay(30);
+    delay(100);
   }
 
   // Ensure all servos have reached their final target angle

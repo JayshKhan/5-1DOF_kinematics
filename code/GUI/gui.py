@@ -17,6 +17,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.servo_mode_entry = None
+        self.current_angles = [10,10,10,10,10,10]
         self.port_entry = None
         self.baud_entry = None
         self.xyz_label_verify = None
