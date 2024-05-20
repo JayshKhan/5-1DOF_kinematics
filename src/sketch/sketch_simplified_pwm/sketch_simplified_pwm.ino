@@ -10,44 +10,43 @@
 #define SERVO_COUNT 6
 #define DELAY 500
 #define SPEED 5
-char Mode ='s';
+char Mode = 's';
 
-Adafruit_PWMServoDriver servos[SERVO_COUNT] = {Adafruit_PWMServoDriver()};
-int Min_PWM[SERVO_COUNT]= {125,110,125,125,130,125};
-int Max_PWM[SERVO_COUNT]= {600,570,575,575,575,575};
+Adafruit_PWMServoDriver servos[SERVO_COUNT] = { Adafruit_PWMServoDriver() };
+int Min_PWM[SERVO_COUNT] = { 125, 110, 125, 125, 130, 125 };
+int Max_PWM[SERVO_COUNT] = { 600, 570, 575, 575, 575, 575 };
 
 
 int servo_pin[SERVO_COUNT] = {
-    1,2,3,4,5,6
-  }; //{3,4,5,6,7,8};
+  1, 2, 3, 4, 5, 6
+};  //{3,4,5,6,7,8};
 double initialAngles[SERVO_COUNT] = {
-    0.0,0.0,0.0,0.0,0.0,0.0
-  }; //initializing all with Zero
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+};  //initializing all with Zero
 double currentAngles[SERVO_COUNT] = {
-    0.0,0.0,0.0,0.0,0.0,0.0
-  }; //initializing all with Zero
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+};  //initializing all with Zero
 double targetAngles[SERVO_COUNT] = {
-    10,10,10,10,10,10
-  }; //initializing all with Zero
+  10, 10, 10, 10, 10, 10
+};  //initializing all with Zero
 
 
 void setup() {
-  Serial.begin(9600); // Initialize serial communication
+  Serial.begin(9600);  // Initialize serial communication
 
-  for(int i=0;i<SERVO_COUNT;i++)
-  {
-    servos[i].begin(); // Initialize the servo driver
-    servos[i].setOscillatorFrequency(27000000); // The int.oscillator frequency is 27MHz
-    servos[i].setPWMFreq(60); // Analog servos run at ~60 Hz updates
+  for (int i = 0; i < SERVO_COUNT; i++) {
+    servos[i].begin();                           // Initialize the servo driver
+    servos[i].setOscillatorFrequency(27000000);  // The int.oscillator frequency is 27MHz
+    servos[i].setPWMFreq(60);                    // Analog servos run at ~60 Hz updates
   }
 }
 
 void loop() {
-  pySerialControl(); // Read angles from serial monitor sent by Python script
+  pySerialControl();  // Read angles from serial monitor sent by Python script
   if (Mode == 's') {
-    moveServosSequentially(); // Move servos to target angles
+    moveServosSequentially();  // Move servos to target angles
   } else if (Mode == 'c') {
-    moveServosSimultaneously(); // Move servos to target angles
+    moveServosSimultaneously();  // Move servos to target angles
   }
 }
 
@@ -65,58 +64,54 @@ void moveServosSequentially() {
     }
     int direction = targetAngles[i] > currentAngles[i] ? 1 : -1;
     for (int j = currentAngles[i]; j != targetAngles[i]; j += direction * SPEED) {
-   
+
       if (direction == -1 && j - SPEED > targetAngles[i]) {
-        
-          servos[i].setPWM(servo_pin[i], 0, angleToPulse(j,i));
-    
+
+        servos[i].setPWM(servo_pin[i], 0, angleToPulse(j, i));
+
       } else if (direction == 1 && j + SPEED < targetAngles[i]) {
-        
-          servos[i].setPWM(servo_pin[i], 0, angleToPulse(j,i));
-   
+
+        servos[i].setPWM(servo_pin[i], 0, angleToPulse(j, i));
+
       } else {
-      
-          servos[i].setPWM(servo_pin[i], 0, angleToPulse(targetAngles[i],i));
-       
+
+        servos[i].setPWM(servo_pin[i], 0, angleToPulse(targetAngles[i], i));
+
         break;
       }
-       delay(30);
+      delay(30);
     }
     currentAngles[i] = targetAngles[i];
     delay(DELAY);
   }
 }
-
 void moveServosSimultaneously() {
-   
+  Serial.println("Moving Simultaneously");
 
-  bool needToMove[SERVO_COUNT] = {false};
-  // Calculate the step size for each servo
-  int directions[SERVO_COUNT];
-  int steps[SERVO_COUNT];
+  // Calculate the maximum number of steps needed for any servo
+  int maxSteps = 0;
   for (int i = 0; i < SERVO_COUNT; i++) {
-    if (targetAngles[i] == -1 || targetAngles[i] == currentAngles[i]) {
-      directions[i] = 0; // No movement for this servo
-      steps[i] = 0;
-    } else {
-      directions[i] = targetAngles[i] > currentAngles[i] ? 1 : -1;
-      steps[i] = abs(targetAngles[i] - currentAngles[i]) / SPEED;
+    if (targetAngles[i] != -1 && targetAngles[i] != currentAngles[i]) {
+      int steps = abs(targetAngles[i] - currentAngles[i]) / SPEED;
+      if (steps > maxSteps) {
+        maxSteps = steps;
+      }
     }
   }
 
   // Move all servos in steps until they reach their target angles
-  int maxSteps = max(steps[0], max(steps[1], steps[2],steps[3],steps[4]));
   for (int step = 0; step <= maxSteps; step++) {
     for (int i = 0; i < SERVO_COUNT; i++) {
-      if (directions[i] == 0) {
+      if (targetAngles[i] == -1 || targetAngles[i] == currentAngles[i]) {
         continue; // Skip servos that don't need to move
       }
-      
-      int nextAngle = currentAngles[i] + directions[i] * SPEED * step;
+
+      int direction = targetAngles[i] > currentAngles[i] ? 1 : -1;
+      int nextAngle = currentAngles[i] + direction * SPEED * step;
 
       // Ensure the servo doesn't overshoot the target angle
-      if ((directions[i] == 1 && nextAngle > targetAngles[i]) || 
-          (directions[i] == -1 && nextAngle < targetAngles[i])) {
+      if ((direction == 1 && nextAngle > targetAngles[i]) || 
+          (direction == -1 && nextAngle < targetAngles[i])) {
         nextAngle = targetAngles[i];
       }
 
@@ -128,13 +123,15 @@ void moveServosSimultaneously() {
 
   // Ensure all servos have reached their final target angle
   for (int i = 0; i < SERVO_COUNT; i++) {
-    servos[i].setPWM(servo_pin[i], 0, angleToPulse(targetAngles[i], i));
-    currentAngles[i] = targetAngles[i];
+    if (targetAngles[i] != -1 && targetAngles[i] != currentAngles[i]) {
+      servos[i].setPWM(servo_pin[i], 0, angleToPulse(targetAngles[i], i));
+      currentAngles[i] = targetAngles[i];
+    }
   }
   delay(DELAY);
 }
 
-int angleToPulse(int ang,int i) {
+int angleToPulse(int ang, int i) {
   int pulse = map(ang, 0, 180, Min_PWM[i], Max_PWM[i]);  // map angle of 0 to 180 to Servo min and Servo max
   Serial.print("Angle: ");
   Serial.print(ang);
@@ -171,7 +168,7 @@ void pySerialControl() {
 
     // Check if the correct number of angles is received
     if (index != SERVO_COUNT) {
-      Serial.println("Invalid number of angles."+String(index)+" Please provide angles for all servos. "+String(SERVO_COUNT));
+      Serial.println("Invalid number of angles." + String(index) + " Please provide angles for all servos. " + String(SERVO_COUNT));
       return;
     }
 
@@ -186,7 +183,7 @@ void pySerialControl() {
       }
     }
 
-     // Process mode character
+    // Process mode character
     if (mode == 's') {
       Serial.println("Sequential mode");
       Mode = mode;
@@ -194,12 +191,9 @@ void pySerialControl() {
       Serial.println("Simultaneous mode");
       Mode = mode;
     } else {
-      Serial.println(String(mode)+" Mode");
+      Serial.println(String(mode) + " Mode");
       Serial.println("Invalid mode character. Use 's' for Sequential or 'c' for Simultaneous mode.");
       return;
     }
   }
 }
-
-
-
