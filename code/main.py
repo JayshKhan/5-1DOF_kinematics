@@ -22,9 +22,9 @@ import numpy as np
 import pyttsx3
 import serial  # Import the serial library for Arduino communication
 
-from forwardKinematic import forward_kinematics
-from inverseKinematic import get_solutions
-from responses import get_error_response, get_error_rresponses_for_singularity
+from code.kinematics.forwardKinematic import forward_kinematics
+from code.kinematics.inverseKinematic import get_solutions
+from code.GUI.responses import get_error_response, get_error_rresponses_for_singularity
 
 
 def text_to_speech(text):
