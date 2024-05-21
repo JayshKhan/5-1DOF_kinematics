@@ -1,3 +1,27 @@
+'''
+This file contains the functions that are used in the GUI
+app parameters are the GUI object which contains the Global Variables.
+
+The functions include:
+- submit_angles -- to submit the angles to the robot arm
+- open_port -- to open the port for communication with the arduino
+- validate_angle -- to validate the angle input
+- validate_coords -- to validate the coordinates input
+- validate_all_angles -- to validate all the angles
+- check_for_singularity -- to check for singularity
+- generate_last_transformation_matrix -- to generate the last transformation matrix from forward kinematics
+- send_to_arduino -- to send data to the arduino
+- adjust_to_zero -- to adjust the value to zero
+- find_best_angle -- to find the best angle
+- create_cell -- to create a cell for matrix in the GUI
+- update_display -- to update the display
+- update_display_and_send -- to update the display and send the angles to the arduino
+- inverse_update_display_and_send -- to update the display and send the inverse kinematics angles to the arduino
+- text_to_speech -- to convert text to speech for error messages. currently not used
+
+@author: Jaysh Khan
+'''
+
 import math
 import subprocess
 # for reading from the arduino
@@ -153,7 +177,7 @@ def adjust_to_zero(value, threshold=1e-5):
     return value
 
 
-def find_best_angle(solutions,app):
+def find_best_angle(solutions, app):
     print(f'Solution Found {len(solutions)}')
 
     valid_solutions = []
@@ -226,7 +250,7 @@ def update_display_and_send(angles, app):
         servo_mode = str(app.servo_mode_entry.get())
         mode = "s" if servo_mode.startswith("Seq") else "c"
         # Prepare data to send to Arduino (replace with your format)
-        data_to_send = ",".join(str(round(angle,4)) for angle in angles) + "," + mode + "\n"
+        data_to_send = ",".join(str(round(angle, 4)) for angle in angles) + "," + mode + "\n"
         print(data_to_send)
 
         # Send data to Arduino
@@ -247,7 +271,7 @@ def inverse_update_display_and_send(app):
     print(f"X: {x}, Y: {y}, Z: {z}")
     solutions = app.kinematic.inverse([x, y, z], app.matplotlib_canvas)
 
-    solution, valid_solutions = find_best_angle(solutions,app)
+    solution, valid_solutions = find_best_angle(solutions, app)
 
     if not solution:
         response = get_error_rresponses_for_singularity()
