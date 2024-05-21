@@ -79,7 +79,7 @@ void moveServosSequentially() {
 
         break;
       }
-      delay(30);
+      delay(50);
     }
     currentAngles[i] = targetAngles[i];
     delay(DELAY);

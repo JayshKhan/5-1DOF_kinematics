@@ -192,27 +192,27 @@ class App(ctk.CTk):
         self.notebook.add(settings_frame, text="Settings")
 
         port_label = ctk.CTkLabel(settings_frame, text="Port:", text_color=("white", "black"))
-        port_label.grid(row=0, column=0)
+        port_label.grid(row=0, column=0, pady=10)
         self.port_entry = ctk.CTkEntry(settings_frame)
         self.port_entry.insert(0, self.COM_PORT)
-        self.port_entry.grid(row=0, column=1)
+        self.port_entry.grid(row=0, column=1, pady=10)
 
         baud_label = ctk.CTkLabel(settings_frame, text="Baud Rate:", text_color=("white", "black"))
-        baud_label.grid(row=1, column=0)
+        baud_label.grid(row=1, column=0, pady=10)
         self.baud_entry = ctk.CTkEntry(settings_frame)
         self.baud_entry.insert(0, self.BAUD_RATE)
-        self.baud_entry.grid(row=1, column=1)
+        self.baud_entry.grid(row=1, column=1, pady=10)
 
         # move Servo Sequentially / Simultaneously
         servo_mode_label = ctk.CTkLabel(settings_frame, text="Servo Mode:", text_color=("white", "black"))
-        servo_mode_label.grid(row=2, column=0)
+        servo_mode_label.grid(row=2, column=0, pady=10)
         self.servo_mode_entry = ctk.CTkOptionMenu(settings_frame, values=["Sequential", "Simultaneous"])
         self.servo_mode_entry.set("Sequential")
-        self.servo_mode_entry.grid(row=2, column=1)
+        self.servo_mode_entry.grid(row=2, column=1, pady=10)
 
-        save_button = ctk.CTkButton(settings_frame, text="Save", corner_radius=10, width=100
+        save_button = ctk.CTkButton(settings_frame, text="Save", corner_radius=10, width=300
                                     , command=lambda: self.save_settings())
-        save_button.grid(row=4, column=0, columnspan=2)
+        save_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     def save_settings(self):
         self.BAUD_RATE = self.baud_entry.get()
