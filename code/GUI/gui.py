@@ -1,8 +1,36 @@
+'''
+This file contains the GUI class for the servo control GUI.
+The GUI has 3 tabs:
+- Forward Kinematics
+- Inverse Kinematics
+- Settings
+
+The Forward Kinematics tab contains:
+- Entry fields for the angles of the servos
+- A submit button to submit the angles to the robot arm
+- Display of the end-effector position
+
+The Inverse Kinematics tab contains:
+- Entry fields for the X, Y, Z coordinates of the end-effector
+- Entry field for the phi change
+- A button to do the inverse kinematics
+- Display of the angles of the servos
+- Display of the end-effector position from the forward kinematics
+
+The Settings tab contains:
+- Entry fields for the COM port and baud rate for serial communication
+- Option menu to select the servo mode (Sequential or Simultaneous)
+- A save button to save the settings
+
+@author: Jaysh Khan
+
+'''
+
 import tkinter as tk
 from tkinter import ttk
 
 import customtkinter as ctk
-from kinematics.Kinematics import Kinematic
+from kinematics.Kinematics import Kinematic  # ignore if shows error. import is working
 
 # import functions from this module
 from . import functions
@@ -17,7 +45,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.servo_mode_entry = None
-        self.current_angles = [10,10,10,10,10,10]
+        self.current_angles = [10, 10, 10, 10, 10, 10]
         self.port_entry = None
         self.baud_entry = None
         self.xyz_label_verify = None

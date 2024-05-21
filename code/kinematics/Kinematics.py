@@ -1,3 +1,10 @@
+'''
+This file contains the Kinematic class which is responsible for the forward and inverse kinematics of the robot arm.
+The forward kinematics function calculates the end-effector position given the joint angles.
+The inverse kinematics function calculates the joint angles given the end-effector position.
+@author: Jaysh Khan
+'''
+
 import math
 
 import numpy as np
@@ -88,6 +95,8 @@ class Kinematic:
         return angles
 
     def plot_3d_robot_arm(self, solutions, app):
+        # TODO: Currently not ploting as expected, need to fix this
+
         print(f'Plotting {solutions} solutions')
 
         a1 = app.kinematic.a1

@@ -5,9 +5,9 @@ Forward and inverse Kinematics of 5 DOF + 1 Gripper DOF of ROT3U Robotic Arm
 [//]: # (check Box)
 
 - [x] Forward Kinematics
-- [ ] Inverse Kinematics
-- [ ] Simulation
-- [ ] Hardware Implementation
+- [x] Inverse Kinematics
+- [ ] Performing Task with Rot3u
+- [x] Hardware Implementation
 
 ## Forward Kinematics
 
@@ -64,7 +64,7 @@ The hardware implementation of the ROT3U robotic arm will be done using the foll
 ### TODO:
 
 - [x] Forward Kinematics
-- [ ] Inverse Kinematics
+- [x] Inverse Kinematics
 - [ ] Add Visualization in GUI
 - [ ] Simulation
 - [ ] Hardware Implementation
