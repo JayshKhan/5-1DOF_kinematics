@@ -6,6 +6,7 @@
 *   @author: Jaysh Khan
 */
 #include <Adafruit_PWMServoDriver.h>
+#include <ArduinoJson.h>
 
 #define SERVO_COUNT 6
 #define DELAY 500
@@ -139,6 +140,15 @@ int angleToPulse(int ang, int i) {
   Serial.print(" pulse: ");
   Serial.println(pulse);
   return pulse;
+}
+
+void readJson() {
+  JsonDocument doc ;
+  if (Serial.available()>0)
+  {
+    deserializeJson(doc,Serial);
+
+  }
 }
 
 
