@@ -28,18 +28,21 @@ import subprocess
 from tkinter import messagebox
 
 import numpy as np
-import pyttsx3
+# import pyttsx3
 import serial  # Import the serial library for Arduino communication
+from spatialmath import SE3
+import roboticstoolbox as rtb
 
 from code.GUI.responses import get_error_response, get_error_rresponses_for_singularity
 
 
 def text_to_speech(text):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 150)  # Adjust speech rate (words per minute)
-
-    engine.say(text)
-    engine.runAndWait()
+    pass
+    # engine = pyttsx3.init()
+    # engine.setProperty('rate', 150)  # Adjust speech rate (words per minute)
+    #
+    # engine.say(text)
+    # engine.runAndWait()
 
 
 current_angles = [0, 0,  # hip
@@ -284,3 +287,61 @@ def inverse_update_display_and_send(app):
     app.angle_print.configure(
         text=f"Servo 1: {round(solution[0])}\nServo 2: {round(solution[1])}\nServo 3: {round(solution[2])}\nServo 4: {round(solution[3])}")
     update_display_and_send(angles, app)
+
+
+def open_cv2_canvas():
+    import cv2
+    canvas_height = 500
+    canvas_width = 500
+    workspace_height = 10
+    workspace_width = 10
+    workspace_points = np.array([[0, 0], [0, workspace_height], [workspace_width, 0], [workspace_width, workspace_height]])
+
+    # Initialize canvas
+    canvas = np.ones((canvas_height, canvas_width, 3), dtype=np.uint8) * 255
+    points = []
+    trajectory = []
+
+    def draw_line_segment(event, x, y, flags, param):
+        global points, canvas, trajectory
+
+        if event == cv2.EVENT_LBUTTONDOWN:
+            points.append((x, y))
+            if len(points) > 1:
+                cv2.line(canvas, points[-2], points[-1], (0, 0, 0), 2)
+                cv2.imshow("Drawing Canvas", canvas)
+
+    def generate_line_trajectory(start, end, steps=10):
+        # robotics Toolbox to generate trajectory  of x,y,z
+        x_start, y_start = start
+        x_end, y_end = end
+        start = SE3([x_start, y_start, -8])
+        end = SE3([x_end, y_end, -8])
+        traj = rtb.tools.trajectory.ctraj(start, end, steps)
+        return [(pose.t[0], pose.t[1]) for pose in traj]
+
+    def canvas_to_workspace(point):
+        """Maps a canvas point to the robot's workspace."""
+        x, y = point
+        # Flip y-axis (canvas origin is top-left)
+        y = canvas_height - y
+        # Scale and translate
+        workspace_x = (x / canvas_width) * workspace_width + workspace_points[:, 0].min()
+        workspace_y = (y / canvas_height) * workspace_height + workspace_points[:, 1].min()
+        return workspace_x, workspace_y
+
+    cv2.namedWindow("Drawing Canvas")
+    cv2.setMouseCallback("Drawing Canvas", draw_line_segment)
+
+    while True:
+        cv2.imshow("Drawing Canvas", canvas)
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == ord("q"):
+            for i in range(len(points) - 1):
+                x, y = canvas_to_workspace(points[i])
+                x1, y1 = canvas_to_workspace(points[i + 1])
+                trajectory += generate_line_trajectory((x, y), (x1, y1))
+
+            break
+

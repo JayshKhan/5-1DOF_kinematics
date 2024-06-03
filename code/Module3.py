@@ -1,6 +1,7 @@
 import math
 import subprocess
 from time import sleep
+import roboticstoolbox as rtb
 
 import serial
 
@@ -84,8 +85,8 @@ def extract_edge_coordinates(image_path, threshold1=100, threshold2=200):
     edges = cv2.Canny(blurred_img, threshold1, threshold2)
 
     # show the image
-    # cv2.imshow('edges', edges)
-
+    cv2.imshow('edges', edges)
+    cv2.waitKey(0)
     # 4. Find contours (connected components) of the edges
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -245,7 +246,15 @@ def send_to_arduino(data):
 
 open_port()
 # send the data to Arduino
+previous_angles = [0, 0, 0, 0, 0, 0]
+
 for angle in angles:
+    # generate trajectory
+    q0 = previous_angles
+    qf = angle
+    q = rtb.jtraj(q0, qf, 30)
+    print(q)
+
     # convert the angles to string
     data = f"{angle[0]},{angle[1]},{angle[2]},{angle[3]},{angle[4]},{angle[5]},c"
     send_to_arduino(data)
