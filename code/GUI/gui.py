@@ -100,6 +100,7 @@ class App(ctk.CTk):
         self.matplotlib_canvas = None
         self.create_fk_frame()
         self.create_ik_frame()
+        self.create_draw_frame()
         self.create_setting_frame()
 
         self.create_port_access_button()
@@ -201,6 +202,22 @@ class App(ctk.CTk):
         self.xyz_label_verify = ctk.CTkLabel(l_ik_frame, text="From Forward: X: 0 Y: 0 Z: 0",
                                              text_color=("white", "black"))
         self.xyz_label_verify.grid(row=15, column=0, columnspan=2)
+
+    def create_draw_frame(self):
+        d_frame = tk.Frame(self.notebook)
+        self.notebook.add(d_frame, text="Draw")
+
+
+        open_cv2_button = ctk.CTkButton(d_frame, text="Open CV2 Canvas",
+                                        corner_radius=10,
+                                        width=300,
+                                        command=lambda: functions.open_cv2_canvas())
+        open_cv2_button.grid(row=1, column=0, columnspan=2, pady=10)
+
+
+
+
+
 
     def create_port_access_button(self):
         open_button = ctk.CTkButton(self, text="Grant Access",
