@@ -1,12 +1,13 @@
+import json
 import math
 import subprocess
 from time import sleep
-import roboticstoolbox as rtb
-
-import serial
 
 import cv2
 import numpy as np
+import roboticstoolbox as rtb
+import serial
+from spatialmath import SE3
 
 ranges = {
     1: (0, 180),
@@ -18,86 +19,95 @@ ranges = {
 }
 current_angles = [0, 0, 0, 0]
 
+# Canvas dimensions
+canvas_width = 30
+canvas_height = 17
 
-def scale_coordinates_to_rectangle(coordinates, image_width, image_height):
-    """
-    Scales and translates a list of image coordinates to fit within
-    a specified rectangular region.
-
-    Args:
-        coordinates (list): List of (x, y) tuples representing image coordinates.
-        image_width (int): Width of the original image.
-        image_height (int): Height of the original image.
-
-    Returns:
-        list: A new list of (x, y) tuples scaled and translated to the rectangle.
-    """
-
-    # Define the target rectangle corners (in cm)
-    top_left = (-16, 23)
-    top_right = (16, 23)
-    bottom_right = (16, 23)
-    bottom_left = (-16, 23)
-
-    # Calculate rectangle dimensions
-    rect_width = top_right[0] - top_left[0]
-    rect_height = top_left[1] - bottom_left[1]
-
-    scaled_coordinates = []
-    for x, y in coordinates:
-        # Scale x from 0-image_width to 0-rect_width
-        scaled_x = (x / image_width) * rect_width
-
-        # Scale y from 0-image_height to 0-rect_height (and flip vertically)
-        scaled_y = (1 - (y / image_height)) * rect_height
-
-        # Translate to the rectangle's position
-        scaled_x += top_left[0]
-        scaled_y += bottom_left[1]
-
-        scaled_coordinates.append((scaled_x, scaled_y))
-
-    return scaled_coordinates
+# Initialize canvas
+canvas = np.ones((canvas_height, canvas_width, 3), dtype=np.uint8) * 255
+points = []
+trajectory = []
 
 
-# --- Function to detect edges and extract coordinates ---
-def extract_edge_coordinates(image_path, threshold1=100, threshold2=200):
-    """
-    Detects edges in an image and returns a list of (x, y) coordinates.
-
-    Args:
-        image_path (str): Path to the input image.
-        threshold1 (int): Lower threshold for Canny edge detection.
-        threshold2 (int): Upper threshold for Canny edge detection.
-
-    Returns:
-        list: A list of tuples, where each tuple represents the (x, y)
-              coordinates of an edge point.
-    """
-
-    # 1. Load the image
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-
-    # 2. Apply Gaussian blur to reduce noise
-    blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
-
-    # 3. Use Canny edge detection
-    edges = cv2.Canny(blurred_img, threshold1, threshold2)
-
-    # show the image
-    cv2.imshow('edges', edges)
-    cv2.waitKey(0)
-    # 4. Find contours (connected components) of the edges
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-    # 5. Extract coordinates from the contours
-    coordinates = []
-    for contour in contours:
-        for point in contour:
-            x, y = point[0]
-            coordinates.append((x, y))
-
-    return scale_coordinates_to_rectangle(coordinates, img.shape[1], img.shape[0])
+# def scale_coordinates_to_rectangle(coordinates, image_width, image_height):
+#     """
+#     Scales and translates a list of image coordinates to fit within
+#     a specified rectangular region.
+#
+#     Args:
+#         coordinates (list): List of (x, y) tuples representing image coordinates.
+#         image_width (int): Width of the original image.
+#         image_height (int): Height of the original image.
+#
+#     Returns:
+#         list: A new list of (x, y) tuples scaled and translated to the rectangle.
+#     """
+#
+#     # Define the target rectangle corners (in cm)
+#     top_left = (-16, 23)
+#     top_right = (16, 23)
+#     bottom_right = (16, 23)
+#     bottom_left = (-16, 23)
+#
+#     # Calculate rectangle dimensions
+#     rect_width = top_right[0] - top_left[0]
+#     rect_height = top_left[1] - bottom_left[1]
+#
+#     scaled_coordinates = []
+#     for x, y in coordinates:
+#         # Scale x from 0-image_width to 0-rect_width
+#         scaled_x = (x / image_width) * rect_width
+#
+#         # Scale y from 0-image_height to 0-rect_height (and flip vertically)
+#         scaled_y = (1 - (y / image_height)) * rect_height
+#
+#         # Translate to the rectangle's position
+#         scaled_x += top_left[0]
+#         scaled_y += bottom_left[1]
+#
+#         scaled_coordinates.append((scaled_x, scaled_y))
+#
+#     return scaled_coordinates
+#
+#
+# # --- Function to detect edges and extract coordinates ---
+# def extract_edge_coordinates(image_path, threshold1=100, threshold2=200):
+#     """
+#     Detects edges in an image and returns a list of (x, y) coordinates.
+#
+#     Args:
+#         image_path (str): Path to the input image.
+#         threshold1 (int): Lower threshold for Canny edge detection.
+#         threshold2 (int): Upper threshold for Canny edge detection.
+#
+#     Returns:
+#         list: A list of tuples, where each tuple represents the (x, y)
+#               coordinates of an edge point.
+#     """
+#
+#     # 1. Load the image
+#     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+#
+#     # 2. Apply Gaussian blur to reduce noise
+#     blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
+#
+#     # 3. Use Canny edge detection
+#     edges = cv2.Canny(blurred_img, threshold1, threshold2)
+#
+#     # show the image
+#     cv2.imshow('edges', edges)
+#     cv2.waitKey(0)
+#     # 4. Find contours (connected components) of the edges
+#     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+#
+#     # 5. Extract coordinates from the contours
+#     coordinates = []
+#     for contour in contours:
+#         for point in contour:
+#             x, y = point[0]
+#             coordinates.append((x, y))
+#
+#     return scale_coordinates_to_rectangle(coordinates, img.shape[1], img.shape[0])
 
 
 def inverse(coordinates):
@@ -163,14 +173,14 @@ def adjust_to_zero(value, threshold=1e-5):
 
 
 def find_best_angle(solutions):
-    print(f'Solution Found {len(solutions)}')
+    # print(f'Solution Found {len(solutions)}')
 
     valid_solutions = []
     for solution in solutions:
         solution = [math.degrees(angle) for angle in solution]
         # adjust to zero
         solution = [adjust_to_zero(angle) for angle in solution]
-        print(solution)
+        # print(solution)
 
         # if all the angles are above 0
         if all([angle >= 0 and angle <= 180 for angle in solution]):
@@ -194,27 +204,29 @@ def find_best_angle(solutions):
     return valid_solutions
 
 
-# --- Example Usage ---
-image_path = "images/polygon.png"
-coordinates = extract_edge_coordinates(image_path)
-print(coordinates)
-# --- Pass coordinates to your inverse kinematics algorithm ---
-angles = []
-for x, y in coordinates:
-    solutions = inverse([x, y, 0])
-    current_angles = angles[-1] if angles else [0, 0, 0, 0]
-    solutions = find_best_angle(solutions)
-    for solution in solutions:
-        if solution is not None:
-            angles.append(solution)
-            break
+# # --- Example Usage ---
+# image_path = "images/polygon.png"
+# coordinates = extract_edge_coordinates(image_path)
+# print(coordinates)
+# # --- Pass coordinates to your inverse kinematics algorithm ---
+# angles = []
+# for x, y in coordinates:
+#     solutions = inverse([x, y, 0])
+#     current_angles = angles[-1] if angles else [0, 0, 0, 0]
+#     solutions = find_best_angle(solutions)
+#     for solution in solutions:
+#         if solution is not None:
+#             angles.append(solution)
+#             break
+#
+# print(angles)
+# for i in range(len(angles)):
+#     angles[i].append(0)
+#     angles[i].append(0)
 
-print(angles)
-for i in range(len(angles)):
-    angles[i].append(0)
-    angles[i].append(0)
+arduino = None
 
-arduino =None
+
 def open_port():
     # giving permission to access the port
     try:
@@ -225,7 +237,7 @@ def open_port():
 
     try:
         global arduino
-        arduino = serial.Serial("/dev/ttyACM0",9600)
+        arduino = serial.Serial("/dev/ttyACM0", 9600)
         print("Access Granted")
     except serial.SerialException as e:
         print("Error opening port:", e)
@@ -236,8 +248,11 @@ def send_to_arduino(data):
     try:
         global arduino
         arduino = serial.Serial("/dev/ttyACM0", 9600)
+        print(data)
         arduino.write(data.encode())
         print(arduino.readline())
+        for i in range(10):
+            print(arduino.readline())
         # arduino.close()
         print("Sent data to Arduino:", data)
     except serial.SerialException as e:
@@ -245,18 +260,147 @@ def send_to_arduino(data):
 
 
 open_port()
-# send the data to Arduino
-previous_angles = [0, 0, 0, 0, 0, 0]
 
-for angle in angles:
-    # generate trajectory
-    q0 = previous_angles
-    qf = angle
-    q = rtb.jtraj(q0, qf, 30)
-    print(q)
 
-    # convert the angles to string
-    data = f"{angle[0]},{angle[1]},{angle[2]},{angle[3]},{angle[4]},{angle[5]},c"
-    send_to_arduino(data)
-    sleep(1)
+def draw_line_segment(event, x, y, flags, param):
+    global points, canvas, trajectory
 
+    if event == cv2.EVENT_LBUTTONDOWN:
+        points.append((x, y))
+        if len(points) > 1:
+            cv2.line(canvas, points[-2], points[-1], (0, 0, 0), 2)
+            cv2.imshow("Drawing Canvas", canvas)
+
+def get_slope(x_start, y_start, x_end, y_end):
+  """Calculates the slope of a line."""
+  if x_start == x_end:
+    raise ZeroDivisionError("Cannot calculate slope for vertical line")
+  return (y_end - y_start) / (x_end - x_start)
+
+def generate_line_trajectory(start ,end, num_points=10):
+  """Calculates a list of points along a straight line trajectory."""
+  x_start ,y_start = start
+  x_end, y_end = end
+  slope = get_slope(x_start, y_start, x_end, y_end)
+  dx = (x_end - x_start) / (num_points - 1)
+  points = []
+  for i in range(num_points):
+    x = x_start + i * dx
+    y = slope * x + y_start  # Assuming no y-intercept needed
+    points.append((x, y))
+  return points
+
+
+
+
+def canvas_to_workspace(point):
+
+    top_left = (-15, 32)
+    top_right = (15, 32)
+    bottom_right = (15, 17)
+    bottom_left = (-15, 17)
+    #
+    #     # Calculate rectangle dimensions
+    workspace_width = top_right[0] - top_left[0]
+    workspace_height = top_left[1] - bottom_left[1]
+    x, y = point
+    # Flip y-axis (canvas origin is top-left)
+    # y = canvas_height - y
+    if x > workspace_width / 2:
+        w_x = x - workspace_width / 2
+    elif x < workspace_width / 2:
+        w_x = -workspace_width / 2 + x
+    else:
+        w_x = 0
+    w_y = bottom_left[1] + y
+
+    print(f"for points: {point} Got: ({w_x,w_y})")
+    return w_x, w_y
+
+
+cv2.namedWindow("Drawing Canvas")
+cv2.setMouseCallback("Drawing Canvas", draw_line_segment)
+
+# print(canvas_to_workspace((0,0)))
+
+while True:
+    cv2.imshow("Drawing Canvas", canvas)
+
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord("q"):
+        for i in range(len(points) - 1):
+            x, y = points[i]#canvas_to_workspace(points[i])
+            x1, y1 = points[i+1]#canvas_to_workspace(points[i + 1])
+            trajectory += generate_line_trajectory((x, y), (x1, y1))
+
+        break
+
+    if key == ord("c"):
+        canvas = np.ones((canvas_height, canvas_width, 3), dtype=np.uint8) * 255
+        points = []
+        trajectory = []
+
+# --- Transform and print trajectory for the robot ---
+robot_trajectory = [canvas_to_workspace(point) for point in trajectory]
+print("Robot Trajectory (Workspace Coordinates):", trajectory)
+# draw the trajectory  on plt
+import matplotlib.pyplot as plt
+
+plt.plot([x for x, y in robot_trajectory], [y for x, y in robot_trajectory], 'r-')
+# plt.show()
+
+cv2.destroyAllWindows()
+
+
+# --- Inverse Kinematic ---
+angles = []
+for x, y in robot_trajectory:
+    print(f" for point ({x},{y}) Solution is ", end=" ")
+    solutions = inverse([x, y, 0])
+    current_angles = angles[-1] if angles else [0, 0, 0, 0]
+    solutions = find_best_angle(solutions)
+    for solution in solutions:
+        if solution is not None:
+            print(solution)
+            angles.append(solution)
+            break
+        print("None")
+print(angles)
+
+
+total_angles_traj =[]
+
+# --- Send angles to Arduino ---
+for i in range(len(angles)-1):
+    # generate trajectory between all the angles
+    angs = rtb.jtraj(angles[i], angles[i + 1], 10)
+
+    for ang in angs.q:
+        total_angles_traj.append(ang)
+        data = f"{ang[0]},{ang[1]},{ang[2]},{ang[3]+90},0,0,0,c"
+        # save data in a file like a cpp double 2d array
+
+txt = f"double angles[{len(total_angles_traj)}][6] ="
+txt +="{"
+for angl in total_angles_traj:
+    txt +="{"
+    for ang in angl:
+        txt += f"{ang},"
+    txt = txt[:-1]
+    txt +="},"
+txt+="};"
+
+print(txt)
+
+
+
+# i = 0
+# print("angles",angles)
+# for angle in angles:
+#     data = f"{angle[0]},{angle[1]},{angle[2]},{angle[3]+90},0,0,0,s"
+#     send_to_arduino(data)
+#     sleep(1)
+
+
+# print(canvas_to_workspace((15,0)))
