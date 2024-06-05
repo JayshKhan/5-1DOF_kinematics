@@ -19,7 +19,7 @@ class Kinematic:
         self.a3 = 16.8
         self.coord = [0, 0, 0]
         self.deg = deg_change
-        self.phi_deg_values = np.arange(-180, 180, self.deg)
+        self.phi_deg_values = [0]#np.arange(-180, 180, self.deg)
         self.dhs = [
             {'alpha': 0, 'a': 0, 'd': 0},
             {'alpha': math.pi / 2, 'a': 0, 'd': 0},
@@ -165,4 +165,4 @@ class Kinematic:
 
     def update_phi(self, change):
         self.deg = change
-        self.phi_deg_values = np.arange(-180, 180, change)
+        self.phi_deg_values =[0]# np.arange(-180, 180, change)
