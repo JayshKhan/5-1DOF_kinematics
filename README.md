@@ -2,12 +2,18 @@
 
 Forward and inverse Kinematics of 5 DOF + 1 Gripper DOF of ROT3U Robotic Arm
 
+> [!NOTE]
+> ReadMe and Documentation is Little Outdated, I'll Update the Documentation and Include few Improvements as soon as i get the chance
+
+
 [//]: # (check Box)
 
 - [x] Forward Kinematics
 - [x] Inverse Kinematics
 - [ ] Performing Task with Rot3u
 - [x] Hardware Implementation
+- [ ] Documentation Update
+- [ ] Code Improvement
 
 ## Forward Kinematics
 
