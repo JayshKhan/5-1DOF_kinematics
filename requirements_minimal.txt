@@ -1,0 +1,15 @@
+# ROT3U Robotic Arm - Minimal Requirements
+# This file contains only the essential dependencies for core functionality
+
+# Core numerical and scientific libraries
+numpy>=1.21.0
+matplotlib>=3.7.0
+
+# GUI framework
+customtkinter>=5.0.0
+
+# Serial communication
+pyserial>=3.5
+
+# Image processing for GUI icons
+Pillow>=9.0.0 

@@ -1,0 +1,31 @@
+# ROT3U Robotic Arm - Python Dependencies
+# Core GUI framework
+customtkinter>=5.2.0 # Usually included with Python
+
+# Scientific computing and mathematics
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+
+# Robotics libraries (optional - for advanced trajectory planning)
+# roboticstoolbox-python>=1.1.0
+# spatialmath-python>=1.1.0
+
+# Serial communication
+pyserial>=3.5
+
+# Computer vision (optional - for trajectory drawing)
+# opencv-python>=4.8.0
+
+# # Jupyter notebook support (optional - for development)
+# jupyter>=1.0.0
+# ipykernel>=6.0.0
+
+# # Development and testing (optional)
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0
+
+# # Documentation (optional)
+# sphinx>=6.0.0
+# sphinx-rtd-theme>=1.3.0 

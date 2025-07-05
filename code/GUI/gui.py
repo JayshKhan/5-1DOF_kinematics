@@ -1,269 +1,478 @@
-'''
-This file contains the GUI class for the servo control GUI.
-The GUI has 3 tabs:
-- Forward Kinematics
-- Inverse Kinematics
-- Settings
+"""
+ROT3U Robotic Arm - GUI Application
 
-The Forward Kinematics tab contains:
-- Entry fields for the angles of the servos
-- A submit button to submit the angles to the robot arm
-- Display of the end-effector position
+This file contains the main GUI application for controlling the ROT3U robotic arm.
+The GUI provides three main tabs:
+- Forward Kinematics: Enter joint angles and see end-effector position
+- Inverse Kinematics: Enter target position and get joint angles
+- Settings: Configure communication and control parameters
 
-The Inverse Kinematics tab contains:
-- Entry fields for the X, Y, Z coordinates of the end-effector
-- Entry field for the phi change
-- A button to do the inverse kinematics
-- Display of the angles of the servos
-- Display of the end-effector position from the forward kinematics
+The GUI uses CustomTkinter for modern styling and provides real-time visualization
+of the robot arm configuration.
 
-The Settings tab contains:
-- Entry fields for the COM port and baud rate for serial communication
-- Option menu to select the servo mode (Sequential or Simultaneous)
-- A save button to save the settings
-
-@author: Jaysh Khan
-
-'''
+Author: Jaysh Khan
+"""
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from typing import List, Optional
+import math
 
 import customtkinter as ctk
-from kinematics.Kinematics import Kinematic  # ignore if shows error. import is working
-
-# import functions from this module
+from kinematics.Kinematics import Kinematic
 from . import functions
 
+# Set GUI theme
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("green")
+
+# Color constants
 COLOR_GREEN = "#26d663"
 COLOR_RED = "#dd0202"
+COLOR_BLUE = "#2196F3"
 
 
-class App(ctk.CTk):
+class ROT3UControlApp(ctk.CTk):
+    """
+    Main application class for the ROT3U robotic arm control GUI.
+    
+    This class provides a comprehensive interface for controlling the robotic arm
+    including forward/inverse kinematics, trajectory planning, and hardware communication.
+    """
+    
     def __init__(self):
         super().__init__()
-        self.servo_mode_entry = None
-        self.current_angles = [10, 10, 10, 10, 10, 10]
-        self.port_entry = None
-        self.baud_entry = None
-        self.xyz_label_verify = None
-        self.phi_change = 1
-        self.kinematic = Kinematic(self.phi_change)
-        # Variables
+        
+        # Initialize robot kinematics
+        self.kinematic = Kinematic()
+        
+        # Communication settings
         self.COM_PORT = '/dev/ttyACM0'
         self.BAUD_RATE = 9600
         self.arduino = None
         self.servo_mode = "Sequential"
-
-        self.cell_size = 30
-        self.padding = 5
-        self.angle_print = None
-        self.phi_entry = None
-        self.z_entry = None
-        self.z_label = None
-        self.phi_label = None
-        self.y_entry = None
-        self.y_label = None
+        
+        # Current joint angles in degrees
+        self.current_angles = [0, 0, 0, 0, 0, 0]
+        
+        # GUI elements
+        self.notebook = None
+        self.matplotlib_plot = None
+        self.matplotlib_canvas = None
+        
+        # Forward kinematics elements
+        self.angle_entries = []
+        self.angle_labels = []
+        self.fk_position_label = None
+        
+        # Inverse kinematics elements
         self.x_entry = None
-        self.xyz_label = None
-        self.canvas = None
-        self.angle_entries = None
-        self.angle_labels = None
-        self.x_label = None
-        self.Style = ttk.Style()
-        self.Style.theme_create(themename="yummy", parent="alt", settings={
+        self.y_entry = None
+        self.z_entry = None
+        self.phi_entry = None
+        self.ik_angles_label = None
+        self.ik_verify_label = None
+        
+        # Settings elements
+        self.port_entry = None
+        self.baud_entry = None
+        self.servo_mode_entry = None
+        
+        self._setup_gui()
+        self._setup_styles()
+        
+    def _setup_gui(self):
+        """Initialize the main GUI components."""
+        self.title("ROT3U Robotic Arm Control")
+        self.geometry("1000x700")
+        
+        # Create main notebook for tabs
+        self.notebook = ttk.Notebook(self, style="primary.TNotebook")
+        
+        # Create tabs
+        self._create_forward_kinematics_tab()
+        self._create_inverse_kinematics_tab()
+        self._create_settings_tab()
+        
+        # Create connection button
+        self._create_connection_button()
+        
+        self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
+        
+    def _setup_styles(self):
+        """Configure the GUI styling."""
+        style = ttk.Style()
+        
+        # Create custom theme
+        style.theme_create(themename="rot3u", parent="alt", settings={
             "TNotebook": {
                 "configure": {
                     "tabmargins": [2, 5, 2, 0],
                     "background": COLOR_GREEN,
                     "foreground": "black"
-                }},
+                }
+            },
             "TNotebook.Tab": {
-                "configure": {"padding": [5, 1]},
-                "map": {"background": [("selected", COLOR_GREEN)],
-                        "expand": [("selected", [1, 1, 1, 0])]}}})
-        self.Style.theme_use(themename="yummy")
-        self.Style.configure(
+                "configure": {"padding": [10, 5]},
+                "map": {
+                    "background": [("selected", COLOR_GREEN)],
+                    "expand": [("selected", [1, 1, 1, 0])]
+                }
+            }
+        })
+        
+        style.theme_use(themename="rot3u")
+        style.configure(
             style="primary.TNotebook",
-            tabposition="nw",
+            tabposition="n",
             background="grey",
             foreground="black",
-            borderwidth=2, darkcolortheme=True, lightcolortheme=False)
-
-        self.title("Servo Control GUI")
-        self.geometry("800x600")
-
-        self.notebook = ttk.Notebook(self, style="primary.TNotebook")
-        self.matplotlib_plot = None
-        self.matplotlib_canvas = None
-        self.create_fk_frame()
-        self.create_ik_frame()
-        self.create_draw_frame()
-        self.create_setting_frame()
-
-        self.create_port_access_button()
-
-        self.notebook.pack(expand=1, fill="both")
-
-    def create_fk_frame(self):
+            borderwidth=2
+        )
+        
+    def _create_forward_kinematics_tab(self):
+        """Create the forward kinematics tab."""
         fk_frame = tk.Frame(self.notebook)
         self.notebook.add(fk_frame, text="Forward Kinematics")
-
-        l_fk_frame = tk.Frame(fk_frame)
-        l_fk_frame.grid(row=0, column=0, sticky="nsew")
-
-        r_fk_frame = tk.Frame(fk_frame)
-        r_fk_frame.grid(row=0, column=1, sticky="ne")
-
-        self.angle_labels = []
+        
+        # Configure grid weights
+        fk_frame.grid_columnconfigure(0, weight=1)
+        fk_frame.grid_columnconfigure(1, weight=2)
+        fk_frame.grid_rowconfigure(0, weight=1)
+        
+        # Left panel for controls
+        left_panel = ctk.CTkFrame(fk_frame)
+        left_panel.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        # Right panel for visualization
+        right_panel = ctk.CTkFrame(fk_frame)
+        right_panel.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        
+        # Create joint angle inputs
+        self._create_joint_angle_inputs(left_panel)
+        
+        # Create position display
+        self._create_position_display(right_panel)
+        
+    def _create_joint_angle_inputs(self, parent):
+        """Create input fields for joint angles."""
+        title = ctk.CTkLabel(parent, text="Joint Angles (degrees)", 
+                           font=ctk.CTkFont(size=16, weight="bold"))
+        title.pack(pady=10)
+        
+        # Joint names
+        joint_names = ["Base", "Shoulder", "Elbow", "Wrist Pitch", "Wrist Roll", "Gripper"]
+        
         self.angle_entries = []
-        for i in range(6):
-            angle_label = ctk.CTkLabel(l_fk_frame, text=f"Servo {i}:" if i > 0 else "ignore", font=("Arial", 12),
-                                       text_color=("white", "black")
-                                       )
-            angle_label.grid(row=i, column=0, padx=5, pady=5)
-            angle_entry = ctk.CTkEntry(l_fk_frame,
-                                       validate="key",
-                                       validatecommand=(self.register(functions.validate_angle), '%P'),
-                                       width=100)
-            angle_entry.insert(0, "0")
-            angle_entry.grid(row=i, column=1, padx=5, pady=5)
-            # hide the first angle
-            if i == 0:
-                angle_label.grid_remove()
-                angle_entry.grid_remove()
-            self.angle_labels.append(angle_label)
-            self.angle_entries.append(angle_entry)
-
-        submit_button = ctk.CTkButton(l_fk_frame, text="Submit Angles",
-                                      corner_radius=10,
-                                      width=300,
-                                      command=self.submit_angles)
-        submit_button.grid(row=6, column=0, columnspan=2, pady=10)
-
-        self.canvas = tk.Canvas(r_fk_frame, width=150, height=150)
-        self.canvas.grid(row=7, column=0, pady=10, columnspan=2)
-
-        self.xyz_label = ctk.CTkLabel(r_fk_frame, text="X: 0 \nY: 0 \nZ: 0", text_color=("white", "black"))
-        self.xyz_label.grid(row=8, column=0, columnspan=2)
-
-    def create_ik_frame(self):
+        self.angle_labels = []
+        
+        for i, name in enumerate(joint_names):
+            frame = ctk.CTkFrame(parent)
+            frame.pack(fill="x", padx=10, pady=5)
+            
+            label = ctk.CTkLabel(frame, text=f"{name}:", width=100)
+            label.pack(side="left", padx=5)
+            
+            # Get joint limits
+            limits = self.kinematic.joint_limits.get(i, (0, 180))
+            
+            entry = ctk.CTkEntry(frame, width=100, 
+                               validate="key",
+                               validatecommand=(self.register(self._validate_angle), '%P'))
+            entry.insert(0, str(self.current_angles[i]))
+            entry.pack(side="left", padx=5)
+            
+            limit_label = ctk.CTkLabel(frame, text=f"({limits[0]}°-{limits[1]}°)", 
+                                     text_color="gray")
+            limit_label.pack(side="left", padx=5)
+            
+            self.angle_entries.append(entry)
+            self.angle_labels.append(label)
+            
+        # Submit button
+        submit_btn = ctk.CTkButton(parent, text="Calculate Forward Kinematics",
+                                 command=self._calculate_forward_kinematics,
+                                 width=200, height=40)
+        submit_btn.pack(pady=20)
+        
+    def _create_position_display(self, parent):
+        """Create display for end-effector position."""
+        title = ctk.CTkLabel(parent, text="End-Effector Position", 
+                           font=ctk.CTkFont(size=16, weight="bold"))
+        title.pack(pady=10)
+        
+        # Position display
+        self.fk_position_label = ctk.CTkLabel(parent, text="X: 0.00 cm\nY: 0.00 cm\nZ: 0.00 cm",
+                                            font=ctk.CTkFont(size=14))
+        self.fk_position_label.pack(pady=20)
+        
+        # Workspace info
+        workspace = self.kinematic.get_workspace_limits()
+        workspace_text = f"Workspace Info:\nMax Reach: {workspace['max_reach']:.1f} cm\nMin Reach: {workspace['min_reach']:.1f} cm"
+        
+        workspace_label = ctk.CTkLabel(parent, text=workspace_text, 
+                                     font=ctk.CTkFont(size=12), 
+                                     text_color="gray")
+        workspace_label.pack(pady=10)
+        
+    def _create_inverse_kinematics_tab(self):
+        """Create the inverse kinematics tab."""
         ik_frame = tk.Frame(self.notebook)
         self.notebook.add(ik_frame, text="Inverse Kinematics")
-
-        l_ik_frame = tk.Frame(ik_frame, width=300)
-        self.matplotlib_plot = tk.Frame(ik_frame, width=300)
-        l_ik_frame.grid(row=0, column=0, sticky="nsew")
-        self.matplotlib_plot.grid(row=0, column=1, sticky="ne")
-
-        self.x_label = ctk.CTkLabel(l_ik_frame, text="X:", text_color=("white", "black"))
-        self.x_label.grid(row=9, column=0)
-        self.x_entry = ctk.CTkEntry(l_ik_frame, validate="key",
-                                    validatecommand=(self.register(functions.validate_coords), '%P'))
-        self.x_entry.insert(0, "0")
-        self.x_entry.grid(row=9, column=1)
-
-        self.y_label = ctk.CTkLabel(l_ik_frame, text="Y:", text_color=("white", "black"))
-        self.y_label.grid(row=10, column=0)
-        self.y_entry = ctk.CTkEntry(l_ik_frame, validate="key",
-                                    validatecommand=(self.register(functions.validate_coords), '%P'))
-        self.y_entry.insert(0, "0")
-        self.y_entry.grid(row=10, column=1)
-
-        self.z_label = ctk.CTkLabel(l_ik_frame, text="Z:", text_color=("white", "black"))
-        self.z_label.grid(row=11, column=0)
-        self.z_entry = ctk.CTkEntry(l_ik_frame, validate="key",
-                                    validatecommand=(self.register(functions.validate_coords), '%P'))
-        self.z_entry.insert(0, "0")
-        self.z_entry.grid(row=11, column=1)
-
-        self.phi_label = ctk.CTkLabel(l_ik_frame, text="Phi Change:", text_color=("white", "black"))
-        self.phi_label.grid(row=12, column=0)
-        self.phi_entry = ctk.CTkEntry(l_ik_frame, validate="key",
-                                      validatecommand=(self.register(functions.validate_angle), '%P'))
-        self.phi_entry.insert(0, "10")
-        self.phi_entry.grid(row=12, column=1)
-
-        # button to do inverse Kinematic
-        inverse_button = ctk.CTkButton(l_ik_frame, text="Do Inverse Kinematic",
-                                       corner_radius=10,
-                                       width=300,
-
-                                       command=lambda: self.inverse_update_display_and_send())
-        inverse_button.place(relx=0.5, rely=0.8, anchor=tk.CENTER)
-        inverse_button.grid(row=13, column=0, columnspan=2, pady=10)
-
-        self.angle_print = ctk.CTkLabel(l_ik_frame, text="Servo 1: 0\nServo 2: 0\nServo 3: 0\nServo 4: 0",
-                                        text_color=("white", "black"))
-        self.angle_print.grid(row=14, column=0, columnspan=2)
-
-        self.xyz_label_verify = ctk.CTkLabel(l_ik_frame, text="From Forward: X: 0 Y: 0 Z: 0",
-                                             text_color=("white", "black"))
-        self.xyz_label_verify.grid(row=15, column=0, columnspan=2)
-
-    def create_draw_frame(self):
-        d_frame = tk.Frame(self.notebook)
-        self.notebook.add(d_frame, text="Draw")
-
-
-        open_cv2_button = ctk.CTkButton(d_frame, text="Open CV2 Canvas",
-                                        corner_radius=10,
-                                        width=300,
-                                        command=lambda: functions.open_cv2_canvas())
-        open_cv2_button.grid(row=1, column=0, columnspan=2, pady=10)
-
-
-
-
-
-
-    def create_port_access_button(self):
-        open_button = ctk.CTkButton(self, text="Grant Access",
-                                    corner_radius=10,
-                                    width=300,
-                                    command=lambda: functions.open_port(self))
-        open_button.pack(side=tk.BOTTOM, pady=10)
-
-    def submit_angles(self):
-        functions.submit_angles(self)
-
-    def inverse_update_display_and_send(self):
-        functions.inverse_update_display_and_send(self)
-
-    def create_setting_frame(self):
+        
+        # Configure grid weights
+        ik_frame.grid_columnconfigure(0, weight=1)
+        ik_frame.grid_columnconfigure(1, weight=2)
+        ik_frame.grid_rowconfigure(0, weight=1)
+        
+        # Left panel for controls
+        left_panel = ctk.CTkFrame(ik_frame)
+        left_panel.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        
+        # Right panel for visualization
+        right_panel = ctk.CTkFrame(ik_frame)
+        right_panel.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        
+        # Set up matplotlib plot frame
+        self.matplotlib_plot = right_panel
+        
+        # Create position inputs
+        self._create_position_inputs(left_panel)
+        
+    def _create_position_inputs(self, parent):
+        """Create input fields for target position."""
+        title = ctk.CTkLabel(parent, text="Target Position", 
+                           font=ctk.CTkFont(size=16, weight="bold"))
+        title.pack(pady=10)
+        
+        # Position inputs
+        coords = [("X", "x_entry"), ("Y", "y_entry"), ("Z", "z_entry")]
+        
+        for coord, attr in coords:
+            frame = ctk.CTkFrame(parent)
+            frame.pack(fill="x", padx=10, pady=5)
+            
+            label = ctk.CTkLabel(frame, text=f"{coord} (cm):", width=80)
+            label.pack(side="left", padx=5)
+            
+            entry = ctk.CTkEntry(frame, width=100,
+                               validate="key",
+                               validatecommand=(self.register(self._validate_coordinate), '%P'))
+            entry.insert(0, "0")
+            entry.pack(side="left", padx=5)
+            
+            setattr(self, attr, entry)
+            
+        # Phi angle input
+        phi_frame = ctk.CTkFrame(parent)
+        phi_frame.pack(fill="x", padx=10, pady=5)
+        
+        phi_label = ctk.CTkLabel(phi_frame, text="Phi (°):", width=80)
+        phi_label.pack(side="left", padx=5)
+        
+        self.phi_entry = ctk.CTkEntry(phi_frame, width=100,
+                                    validate="key",
+                                    validatecommand=(self.register(self._validate_angle), '%P'))
+        self.phi_entry.insert(0, "0")
+        self.phi_entry.pack(side="left", padx=5)
+        
+        # Calculate button
+        calc_btn = ctk.CTkButton(parent, text="Calculate Inverse Kinematics",
+                               command=self._calculate_inverse_kinematics,
+                               width=200, height=40)
+        calc_btn.pack(pady=20)
+        
+        # Results display
+        self.ik_angles_label = ctk.CTkLabel(parent, text="Joint Angles:\n(Not calculated)", 
+                                          font=ctk.CTkFont(size=12))
+        self.ik_angles_label.pack(pady=10)
+        
+        self.ik_verify_label = ctk.CTkLabel(parent, text="Verification:\n(Not calculated)", 
+                                          font=ctk.CTkFont(size=12), 
+                                          text_color="gray")
+        self.ik_verify_label.pack(pady=10)
+        
+    def _create_settings_tab(self):
+        """Create the settings tab."""
         settings_frame = tk.Frame(self.notebook)
         self.notebook.add(settings_frame, text="Settings")
-
-        port_label = ctk.CTkLabel(settings_frame, text="Port:", text_color=("white", "black"))
-        port_label.grid(row=0, column=0, pady=10)
-        self.port_entry = ctk.CTkEntry(settings_frame)
+        
+        main_frame = ctk.CTkFrame(settings_frame)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        title = ctk.CTkLabel(main_frame, text="Communication Settings", 
+                           font=ctk.CTkFont(size=16, weight="bold"))
+        title.pack(pady=10)
+        
+        # COM Port setting
+        port_frame = ctk.CTkFrame(main_frame)
+        port_frame.pack(fill="x", padx=10, pady=5)
+        
+        port_label = ctk.CTkLabel(port_frame, text="COM Port:", width=100)
+        port_label.pack(side="left", padx=5)
+        
+        self.port_entry = ctk.CTkEntry(port_frame, width=150)
         self.port_entry.insert(0, self.COM_PORT)
-        self.port_entry.grid(row=0, column=1, pady=10)
+        self.port_entry.pack(side="left", padx=5)
+        
+        # Baud Rate setting
+        baud_frame = ctk.CTkFrame(main_frame)
+        baud_frame.pack(fill="x", padx=10, pady=5)
+        
+        baud_label = ctk.CTkLabel(baud_frame, text="Baud Rate:", width=100)
+        baud_label.pack(side="left", padx=5)
+        
+        self.baud_entry = ctk.CTkEntry(baud_frame, width=150)
+        self.baud_entry.insert(0, str(self.BAUD_RATE))
+        self.baud_entry.pack(side="left", padx=5)
+        
+        # Servo Mode setting
+        mode_frame = ctk.CTkFrame(main_frame)
+        mode_frame.pack(fill="x", padx=10, pady=5)
+        
+        mode_label = ctk.CTkLabel(mode_frame, text="Servo Mode:", width=100)
+        mode_label.pack(side="left", padx=5)
+        
+        self.servo_mode_entry = ctk.CTkOptionMenu(mode_frame, 
+                                                values=["Sequential", "Simultaneous"],
+                                                width=150)
+        self.servo_mode_entry.set(self.servo_mode)
+        self.servo_mode_entry.pack(side="left", padx=5)
+        
+        # Save button
+        save_btn = ctk.CTkButton(main_frame, text="Save Settings",
+                               command=self._save_settings,
+                               width=200, height=40)
+        save_btn.pack(pady=20)
+        
+    def _create_connection_button(self):
+        """Create the connection button at the bottom."""
+        conn_btn = ctk.CTkButton(self, text="Connect to Arduino",
+                               command=self._connect_arduino,
+                               width=200, height=40)
+        conn_btn.pack(side="bottom", pady=10)
+        
+    def _validate_angle(self, value: str) -> bool:
+        """Validate angle input (0-180 degrees)."""
+        if value == "" or value == "-":
+            return True
+        try:
+            angle = float(value)
+            return 0 <= angle <= 180
+        except ValueError:
+            return False
+            
+    def _validate_coordinate(self, value: str) -> bool:
+        """Validate coordinate input (any float)."""
+        if value == "" or value == "-":
+            return True
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+            
+    def _calculate_forward_kinematics(self):
+        """Calculate and display forward kinematics."""
+        try:
+            # Get joint angles
+            angles = []
+            for entry in self.angle_entries:
+                angle = float(entry.get() or 0)
+                angles.append(math.radians(angle))  # Convert to radians
+                
+            # Validate angles
+            angles_deg = [math.degrees(a) for a in angles]
+            if not self.kinematic.validate_joint_angles(angles_deg):
+                messagebox.showerror("Error", "Joint angles are outside valid ranges!")
+                return
+                
+            # Calculate forward kinematics
+            transform = self.kinematic.forward_kinematics(angles)
+            x, y, z = transform[0, 3], transform[1, 3], transform[2, 3]
+            
+            # Update display
+            self.fk_position_label.configure(text=f"X: {x:.2f} cm\nY: {y:.2f} cm\nZ: {z:.2f} cm")
+            
+            # Update current angles
+            self.current_angles = angles_deg
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate forward kinematics: {str(e)}")
+            
+    def _calculate_inverse_kinematics(self):
+        """Calculate and display inverse kinematics."""
+        try:
+            # Get target position
+            x = float(self.x_entry.get() or 0)
+            y = float(self.y_entry.get() or 0) 
+            z = float(self.z_entry.get() or 0)
+            
+            target_position = [x, y, z]
+            
+            # Check if position is reachable
+            if not self.kinematic.is_position_reachable(target_position):
+                messagebox.showwarning("Warning", "Target position may be outside workspace!")
+                
+            # Calculate inverse kinematics
+            solutions = self.kinematic.inverse_kinematics(target_position)
+            
+            if not solutions:
+                messagebox.showerror("Error", "No solution found for target position!")
+                return
+                
+            # Find best solution
+            best_solution = self.kinematic.find_best_solution(solutions, self.current_angles)
+            
+            if best_solution is None:
+                messagebox.showerror("Error", "No valid solution within joint limits!")
+                return
+                
+            # Display solution
+            angles_text = "Joint Angles:\n"
+            joint_names = ["Base", "Shoulder", "Elbow", "Wrist"]
+            for i, (name, angle) in enumerate(zip(joint_names, best_solution)):
+                angles_text += f"{name}: {angle:.1f}°\n"
+                
+            self.ik_angles_label.configure(text=angles_text)
+            
+            # Verify solution using forward kinematics
+            angles_rad = [math.radians(a) for a in ([0] + best_solution + [0])]
+            verify_transform = self.kinematic.forward_kinematics(angles_rad)
+            vx, vy, vz = verify_transform[0, 3], verify_transform[1, 3], verify_transform[2, 3]
+            
+            verify_text = f"Verification:\nX: {vx:.2f} cm\nY: {vy:.2f} cm\nZ: {vz:.2f} cm"
+            self.ik_verify_label.configure(text=verify_text)
+            
+            # Plot robot configuration
+            self.kinematic.plot_robot_arm(solutions, self)
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate inverse kinematics: {str(e)}")
+            
+    def _save_settings(self):
+        """Save communication settings."""
+        try:
+            self.COM_PORT = self.port_entry.get()
+            self.BAUD_RATE = int(self.baud_entry.get())
+            self.servo_mode = self.servo_mode_entry.get()
+            messagebox.showinfo("Success", "Settings saved successfully!")
+        except ValueError:
+            messagebox.showerror("Error", "Invalid baud rate! Please enter a number.")
+            
+    def _connect_arduino(self):
+        """Connect to Arduino."""
+        try:
+            functions.open_port(self)
+            messagebox.showinfo("Success", "Connected to Arduino successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to connect to Arduino: {str(e)}")
 
-        baud_label = ctk.CTkLabel(settings_frame, text="Baud Rate:", text_color=("white", "black"))
-        baud_label.grid(row=1, column=0, pady=10)
-        self.baud_entry = ctk.CTkEntry(settings_frame)
-        self.baud_entry.insert(0, self.BAUD_RATE)
-        self.baud_entry.grid(row=1, column=1, pady=10)
 
-        # move Servo Sequentially / Simultaneously
-        servo_mode_label = ctk.CTkLabel(settings_frame, text="Servo Mode:", text_color=("white", "black"))
-        servo_mode_label.grid(row=2, column=0, pady=10)
-        self.servo_mode_entry = ctk.CTkOptionMenu(settings_frame, values=["Sequential", "Simultaneous"])
-        self.servo_mode_entry.set("Sequential")
-        self.servo_mode_entry.grid(row=2, column=1, pady=10)
+# For backward compatibility
+App = ROT3UControlApp
 
-        save_button = ctk.CTkButton(settings_frame, text="Save", corner_radius=10, width=300
-                                    , command=lambda: self.save_settings())
-        save_button.grid(row=4, column=0, columnspan=2, pady=10)
 
-    def save_settings(self):
-        self.BAUD_RATE = self.baud_entry.get()
-        self.COM_PORT = self.port_entry.get()
-        self.servo_mode = self.servo_mode_entry.get()
-
-    def update_phi(self, phi):
-        self.phi_change = phi
-        self.kinematic.update_phi(phi)
+if __name__ == "__main__":
+    app = ROT3UControlApp()
+    app.mainloop()
