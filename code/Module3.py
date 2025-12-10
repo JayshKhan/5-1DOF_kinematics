@@ -301,6 +301,13 @@ def save_trajectory_to_json(trajectory, filename='trajectory.json'):
         filename (str): Output filename
     """
     try:
+        # Convert numpy arrays to lists for JSON serialization
+        if hasattr(trajectory, 'tolist'):
+             trajectory = trajectory.tolist()
+        elif isinstance(trajectory, list):
+             # Check if elements are numpy arrays
+             trajectory = [item.tolist() if hasattr(item, 'tolist') else item for item in trajectory]
+
         with open(filename, 'w') as file:
             json.dump(trajectory, file, indent=2)
         print(f"Trajectory saved to {filename}")

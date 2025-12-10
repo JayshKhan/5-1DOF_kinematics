@@ -1,6 +1,6 @@
 # ROT3U Robotic Arm - Python Dependencies
 # Core GUI framework
-customtkinter>=5.2.0 # Usually included with Python
+customtkinter>=5.2.0
 
 # Scientific computing and mathematics
 numpy>=1.24.0
