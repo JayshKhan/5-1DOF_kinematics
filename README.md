@@ -1,5 +1,7 @@
 # ROT3U Robotic Arm - 5-DOF + 1 Gripper Kinematics
 
+
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-linux%7Cwindows-lightgrey)
@@ -135,6 +137,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+## 📚 References
+
+- [Building and Controlling a 5-DOF Robotic Arm (Medium Article)](https://medium.com/@jayshkhan10/building-and-controlling-a-5-dof-robotic-arm-a-hands-on-guide-with-rot3u-f71c97cfd5fa)
+- [Denavit-Hartenberg Parameters](https://en.wikipedia.org/wiki/Denavit%E2%80%93Hartenberg_parameters)
 
 ## 📄 License
 
